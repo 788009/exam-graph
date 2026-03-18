@@ -65,11 +65,46 @@
                         @click="currentTab = section.section_key">
                         {{ section.section_name }}
                     </li>
+                    
+                    <li class="sidebar-divider"></li>
+                    <li :class="{ active: currentTab === 'about' }" @click="currentTab = 'about'">
+                        关于软件
+                    </li>
+                </ul>
+            </aside>
                 </ul>
             </aside>
 
             <section class="config-panel">
                 <div v-if="loading" class="loading">正在加载配置...</div>
+                
+                <div v-else-if="currentTab === 'about'" class="form-container about-container">
+                    <div class="about-header">
+                        <h2>批量成绩可视化 (Exam Graph)</h2>
+                        <span class="version-badge">v0.1.0</span>
+                    </div>
+                    
+                    <div class="about-content">
+                        <div class="info-row">
+                            <span class="info-label">开源仓库：</span>
+                            <a href="https://github.com/788009/exam-graph" target="_blank" class="github-link">
+                                https://github.com/788009/exam-graph
+                            </a>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">核心引擎：</span>
+                            <span>Python + Matplotlib + Pandas</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">前端框架：</span>
+                            <span>pywebview + Vue 3</span>
+                        </div>
+                    </div>
+                    
+                    <div class="about-footer">
+                        <p>如果您在使用过程中遇到 Bug 或有功能建议，欢迎前往 GitHub 提交 Issue。</p>
+                    </div>
+                </div>
                 
                 <div v-else-if="getSectionData(currentTab)" class="form-container">
                     <h2 class="section-title">{{ currentTabName }}</h2>

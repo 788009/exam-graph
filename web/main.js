@@ -24,13 +24,13 @@ window.addEventListener('pywebviewready', function() {
             };
         },
         computed: {
-            // 获取当前选中模块的名称
             currentTabName() {
+                if (this.currentTab === 'about') return '关于软件';
                 const tab = this.schema.find(s => s.section_key === this.currentTab);
                 return tab ? tab.section_name : '';
             },
-            // 获取当前选中模块下的所有配置项
             currentFields() {
+                if (this.currentTab === 'about') return [];
                 const tab = this.schema.find(s => s.section_key === this.currentTab);
                 return tab ? tab.items : [];
             }

@@ -564,3 +564,84 @@ input:checked + .slider:before { transform: translateX(20px); }
     background-color: #fee2e2;
     color: #ef4444;
 }
+
+/* ==========================================
+   侧边栏分割线与关于页面
+========================================== */
+.sidebar-divider {
+    height: 1px;
+    background-color: #334155;
+    margin: 10px 20px;
+    padding: 0 !important;
+    cursor: default !important;
+}
+.sidebar-divider:hover { background-color: #334155 !important; }
+
+.about-container {
+    max-width: 600px; /* 关于页面不需要那么宽 */
+    margin: 0 auto;
+}
+
+.about-header {
+    text-align: center;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 24px;
+}
+
+.about-header h2 {
+    font-size: 1.5rem;
+    color: var(--text-main);
+    margin-bottom: 12px;
+}
+
+.version-badge {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-family: 'Consolas', monospace;
+    font-weight: bold;
+}
+
+.about-content {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.info-row {
+    display: flex;
+    margin-bottom: 16px;
+    font-size: 0.95rem;
+}
+.info-row:last-child { margin-bottom: 0; }
+
+.info-label {
+    width: 80px;
+    color: var(--text-muted);
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.github-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-family: 'Consolas', monospace;
+    word-break: break-all;
+    transition: color 0.2s;
+}
+.github-link:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.about-footer {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    line-height: 1.6;
+}
