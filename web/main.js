@@ -20,7 +20,14 @@ window.addEventListener('pywebviewready', function() {
                 showPreviewModal: false,
                 previewImageSrc: '',
                 isPreviewing: false,
-                previewStudentName: ''
+                previewStudentName: '',
+                // 进度条状态
+                progress: {
+                    current: 0,
+                    total: 0,
+                    percent: 0,
+                    name: ''
+                }
             };
         },
         computed: {
@@ -41,6 +48,7 @@ window.addEventListener('pywebviewready', function() {
             window.taskFinished = this.onTaskFinished;
             window.taskError = this.onTaskError;
             window.appendLog = this.appendLog;
+            window.updateProgress = this.updateProgress;
         },
         methods: {
             // ===== 根据点号路径安全获取嵌套对象的辅助函数 =====
@@ -239,6 +247,9 @@ window.addEventListener('pywebviewready', function() {
                 this.isLogVisible = true;
                 this.taskCompleted = false;
 
+                // 每次开始时清零进度
+                this.progress = { current: 0, total: 0, percent: 0, name: '' };
+                
                 this.appendLog('====================================');
                 this.appendLog(`[任务开始] 正在处理: ${this.selectedFile}`);
                 
@@ -251,6 +262,15 @@ window.addEventListener('pywebviewready', function() {
                     this.appendLog(`[调用失败] 无法启动任务: ${error}`);
                     this.isProcessing = false;
                 }
+            },
+
+            // 更新进度的核心逻辑
+            updateProgress(current, total, name) {
+                this.progress.current = current;
+                this.progress.total = total;
+                // 计算百分比，向下取整
+                this.progress.percent = Math.floor((current / total) * 100);
+                this.progress.name = name;
             },
 
             // 辅助功能：点击占位符标签时，自动将其插入到对应的输入框中，支持嵌套路径的占位符插入

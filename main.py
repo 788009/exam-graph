@@ -7,6 +7,7 @@ import subprocess
 import base64
 import tempfile
 import io
+import time
 from core.utils import *
 from core.config_parser import ConfigManager
 from core.batch_manager import BatchManager
@@ -215,8 +216,21 @@ class Api:
         def _run():
             try:
                 manager = BatchManager(self.external_config_path)
+
+                last_update_time = 0
+                
+                def progress_cb(current, total, name):
+                    nonlocal last_update_time
+                    current_time = time.time()
+                    
+                    # 核心逻辑：距离上次通信超过 0.06 秒 (约 15 FPS)，或者是最后一条数据时，才发送给前端
+                    if current_time - last_update_time > 0.06 or current == total:
+                        last_update_time = current_time
+                        safe_name = str(name).replace("'", "\\'")
+                        self._window.evaluate_js(f"window.updateProgress({current}, {total}, '{safe_name}')")
+
                 # 捕获内核返回的实际输出目录
-                actual_output_dir = manager.run(excel_path)
+                actual_output_dir = manager.run(excel_path, progress_callback=progress_cb)
                 
                 # Windows 路径的斜杠 \ 会破坏 JS 字符串，需替换为 /
                 safe_dir = str(actual_output_dir).replace('\\', '/')

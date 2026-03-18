@@ -26,7 +26,7 @@ class BatchManager:
         self.config_manager = ConfigManager(config_path)
         self.config = self.config_manager.config
 
-    def run(self, excel_path):
+    def run(self, excel_path, progress_callback=None):
         """执行批量生成的总指挥方法"""
         start_time = time.time()
         print(f"[{time.strftime('%H:%M:%S')}] 开始任务，读取数据...")
@@ -43,6 +43,7 @@ class BatchManager:
         if not students:
             print("未解析到任何有效学生数据，任务终止。")
             return
+        total_students = len(students)
             
         # 动态解析 base_dir 所需的变量
         excel_filename = os.path.splitext(os.path.basename(excel_path))[0]
@@ -95,6 +96,10 @@ class BatchManager:
                     else:
                         fail_count += 1
                         print(f"\n[错误] 学生 {name} 图表生成失败: {msg}")
+
+                    if progress_callback:
+                        # 传出：当前第几个、总数、当前同学姓名
+                        progress_callback(i + 1, total_students, name)
                     
                     # 简单的终端进度条打印
                     if i % 10 == 0 or i == len(students):

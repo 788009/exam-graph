@@ -211,6 +211,16 @@
                 <span>运行日志</span>
                 <span class="toggle-icon">{{ isLogVisible ? '▼ 收起终端' : '▲ 展开终端' }}</span>
             </div>
+            
+            <div class="progress-container" v-if="isProcessing && progress.total > 0">
+                <div class="progress-info">
+                    <span>正在绘制: [{{ progress.current }}/{{ progress.total }}] {{ progress.name }}</span>
+                    <span>{{ progress.percent }}%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" :style="{ width: progress.percent + '%' }"></div>
+                </div>
+            </div>
             <div class="log-content">
                 <div v-for="(log, index) in logs" :key="index" class="log-item">{{ log }}</div>
             </div>
