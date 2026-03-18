@@ -3,6 +3,8 @@ import math
 
 # 强制 Matplotlib 使用非交互式、线程安全的 Agg 后端
 import matplotlib
+
+from core.utils import get_exe_dir
 matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
@@ -11,12 +13,14 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FuncFormatter
 import seaborn as sns
 
+from core.utils import *
+
 class StudentPlotter:
     def __init__(self, config_manager, output_dir="./output"):
         self.config = config_manager.config
         self.plot_cfg = self.config.get("plot", {})
         self.styles_cfg = self.plot_cfg.get("styles", {})
-        self.output_dir = output_dir
+        self.output_dir = get_exe_dir() + output_dir
         
         # 确保输出目录存在
         os.makedirs(self.output_dir, exist_ok=True)

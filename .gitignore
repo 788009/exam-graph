@@ -6,3 +6,7 @@ output/*
 core/__pycache__/*
 test.py
 config.toml
+build
+dist
+main.spec
+release/*

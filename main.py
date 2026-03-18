@@ -7,16 +7,22 @@ import subprocess
 import base64
 import tempfile
 import io
+from core.utils import *
 from core.config_parser import ConfigManager
 from core.batch_manager import BatchManager
 from core.data_loader import DataLoader
 
+
+
 class Api:
     def __init__(self):
-        # 核心修复：加上单下划线，让 pywebview 知道这是内部变量，不要去碰它们！
         self._window = None
-        self._schema_path = "./config_schema.json"
-        self._config_manager = ConfigManager("./config.toml")
+        # 使用内部资源路径读取 schema
+        self._schema_path = get_resource_path("config_schema.json")
+        
+        # 使用外部路径初始化 ConfigManager，确保可读写
+        self.external_config_path = init_external_config()
+        self._config_manager = ConfigManager(self.external_config_path)
 
     def set_window(self, window):
         self._window = window
@@ -208,7 +214,7 @@ class Api:
         """前端调用：启动批量生成任务"""
         def _run():
             try:
-                manager = BatchManager("./config.toml")
+                manager = BatchManager(self.external_config_path)
                 # 捕获内核返回的实际输出目录
                 actual_output_dir = manager.run(excel_path)
                 
@@ -225,6 +231,9 @@ class Api:
         return {"status": "started"}
 
 if __name__ == '__main__':
+    import multiprocessing
+    # 防止 Windows 下打包后多进程无限弹窗
+    multiprocessing.freeze_support()
     api = Api()
     window = webview.create_window('Exam Graph', 'web/index.html', js_api=api, width=1000, height=750)
     api.set_window(window)
