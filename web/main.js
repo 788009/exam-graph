@@ -283,6 +283,10 @@ window.addEventListener('pywebviewready', function() {
                 this.appendLog(`[任务开始] 正在处理: ${this.selectedFile}`);
                 
                 try {
+                    // 在正式开始批量生成前，静默保存最新的前端配置
+                    await window.pywebview.api.save_config(Vue.toRaw(this.config));
+                    this.appendLog('[系统] 已自动应用并保存最新配置。');
+
                     // 调用 Python 启动多进程任务
                     await window.pywebview.api.start_task(this.selectedFile);
                     // 注意：这里不设 isProcessing = false，因为后端是异步的，
