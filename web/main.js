@@ -1,0 +1,171 @@
+// 确保只在 pywebview 注入完成后再初始化 Vue
+window.addEventListener('pywebviewready', function() {
+    
+    const app = Vue.createApp({
+        data() {
+            return {
+                schema: [],           // 存储配置项的 JSON 骨架
+                config: {},           // 存储真实的 TOML 配置数据
+                currentTab: 'data',   // 当前选中的左侧菜单 key
+                selectedFile: '',     // 选中的 Excel 文件路径
+                isProcessing: false,  // 是否正在生成图表
+                loading: true,        // 是否正在加载配置
+                logs: ['[系统] 成绩可视化配置台初始化完成...']
+            };
+        },
+        computed: {
+            // 获取当前选中模块的名称
+            currentTabName() {
+                const tab = this.schema.find(s => s.section_key === this.currentTab);
+                return tab ? tab.section_name : '';
+            },
+            // 获取当前选中模块下的所有配置项
+            currentFields() {
+                const tab = this.schema.find(s => s.section_key === this.currentTab);
+                return tab ? tab.items : [];
+            }
+        },
+        mounted() {
+            this.initData();
+            // 将内部方法挂载到 window 上，供 Python 后端通过 evaluate_js 回调
+            window.taskFinished = this.onTaskFinished;
+            window.taskError = this.onTaskError;
+            window.appendLog = this.appendLog;
+        },
+        methods: {
+            // ===== 根据点号路径安全获取嵌套对象的辅助函数 =====
+            getSectionData(path) {
+                if (!this.config || !path) return undefined;
+                let obj = this.config;
+                const keys = path.split('.'); // 将 "plot.styles" 拆分成 ["plot", "styles"]
+                for (let key of keys) {
+                    if (obj[key] === undefined) return undefined;
+                    obj = obj[key]; // 逐层深入
+                }
+                return obj;
+            },
+
+            async initData() {
+                try {
+                    // 1. 获取 JSON Schema
+                    const schemaRes = await window.pywebview.api.get_schema();
+                    
+                    // 防御性判断：如果 Python 返回了错误对象
+                    if (schemaRes && schemaRes.error) {
+                        throw new Error(schemaRes.error);
+                    }
+                    // 防御性判断：如果不是数组
+                    if (!Array.isArray(schemaRes)) {
+                        throw new Error("Schema 格式不正确，应为数组");
+                    }
+                    
+                    this.schema = schemaRes;
+                    
+                    // 2. 获取真实的 TOML 配置
+                    const configRes = await window.pywebview.api.get_config();
+                    if (configRes && configRes.error) {
+                        throw new Error(configRes.error);
+                    }
+                    this.config = configRes;
+                    
+                    // 默认选中第一个 Tab
+                    if (this.schema.length > 0) {
+                        this.currentTab = this.schema[0].section_key;
+                    }
+                } catch (error) {
+                    this.appendLog('[致命错误] 加载配置失败: ' + error.message);
+                    alert("界面初始化失败：\n" + error.message + "\n\n请检查 web/config_schema.json 是否存在且格式正确。");
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            async selectFile() {
+                const filepath = await window.pywebview.api.choose_excel_file();
+                if (filepath) {
+                    this.selectedFile = filepath;
+                    this.appendLog(`[就绪] 已选择数据文件: ${filepath}`);
+                }
+            },
+
+            async saveConfig() {
+                this.isProcessing = true;
+                this.appendLog('[系统] 正在保存配置...');
+                
+                try {
+                    // 将前端绑定的 config 对象直接扔给 Python
+                    const res = await window.pywebview.api.save_config(Vue.toRaw(this.config));
+                    if (res.status === 'success') {
+                        this.appendLog('[成功] 配置已成功保存到 config.toml！');
+                        alert('配置保存成功！');
+                    } else {
+                        this.appendLog(`[错误] 保存失败: ${res.message}`);
+                        alert('保存失败，请查看底层日志。');
+                    }
+                } catch (error) {
+                    this.appendLog(`[异常] 保存出错: ${error}`);
+                } finally {
+                    this.isProcessing = false;
+                }
+            },
+
+            async startTask() {
+                if (!this.selectedFile) {
+                    alert('请先选择一个 Excel 表格文件！');
+                    return;
+                }
+                
+                this.isProcessing = true;
+                this.appendLog('====================================');
+                this.appendLog(`[任务开始] 正在处理: ${this.selectedFile}`);
+                
+                try {
+                    // 调用 Python 启动多进程任务
+                    await window.pywebview.api.start_task(this.selectedFile);
+                    // 注意：这里不设 isProcessing = false，因为后端是异步的，
+                    // 状态恢复交给 window.taskFinished 和 window.taskError 处理
+                } catch (error) {
+                    this.appendLog(`[调用失败] 无法启动任务: ${error}`);
+                    this.isProcessing = false;
+                }
+            },
+
+            // 辅助功能：点击占位符标签时，自动将其插入到对应的输入框中，支持嵌套路径的占位符插入
+            insertPlaceholder(sectionKey, itemKey, placeholder) {
+                const targetObj = this.getSectionData(sectionKey);
+                if (!targetObj) return;
+                
+                let currentValue = targetObj[itemKey] || '';
+                targetObj[itemKey] = currentValue + placeholder;
+            },
+
+            // ===== 供 Python 调用的全局回调方法 =====
+            
+            appendLog(msg) {
+                this.logs.push(msg);
+                // 自动滚动到最底部
+                this.$nextTick(() => {
+                    const logContent = document.querySelector('.log-content');
+                    if (logContent) {
+                        logContent.scrollTop = logContent.scrollHeight;
+                    }
+                });
+            },
+
+            onTaskFinished(msg) {
+                this.appendLog(`[完成] ${msg}`);
+                this.isProcessing = false;
+                alert('所有图表生成完毕！请前往 output 目录查看。');
+            },
+
+            onTaskError(msg) {
+                this.appendLog(`[严重错误] ${msg}`);
+                this.isProcessing = false;
+                alert('任务执行过程中出错，请查看底层日志。');
+            }
+        }
+    });
+
+    // 挂载 Vue 实例到 id="app" 的 div 上
+    app.mount('#app');
+});

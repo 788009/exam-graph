@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成绩可视化配置台</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.staticfile.net/vue/3.3.4/vue.global.prod.js"></script>
+</head>
+<body>
+    <div id="app" v-cloak>
+        
+        <header class="top-bar">
+            <div class="file-picker">
+                <button class="btn-secondary" @click="selectFile">选择 Excel 表格</button>
+                <span class="file-path" :title="selectedFile">{{ selectedFile || '未选择任何文件' }}</span>
+            </div>
+            <div class="actions">
+                <button class="btn-primary" @click="saveConfig" :disabled="isProcessing">保存配置</button>
+                <button class="btn-success" @click="startTask" :disabled="!selectedFile || isProcessing">
+                    {{ isProcessing ? '生成中...' : '开始生成' }}
+                </button>
+            </div>
+        </header>
+
+        <main class="main-layout">
+            <aside class="sidebar">
+                <ul>
+                    <li v-for="section in schema" 
+                        :key="section.section_key"
+                        :class="{ active: currentTab === section.section_key }"
+                        @click="currentTab = section.section_key">
+                        {{ section.section_name }}
+                    </li>
+                </ul>
+            </aside>
+
+            <section class="config-panel">
+                <div v-if="loading" class="loading">正在加载配置...</div>
+                
+                <div v-else-if="getSectionData(currentTab)" class="form-container">
+                    <h2 class="section-title">{{ currentTabName }}</h2>
+                    
+                    <div class="form-group" v-for="item in currentFields" :key="item.key">
+                        <div class="form-label-wrapper">
+                            <label class="form-label">{{ item.label }}</label>
+                            <span class="form-key-hint">({{ item.key }})</span>
+                        </div>
+                        
+                        <div class="form-control-wrapper">
+                            
+                            <input v-if="item.type === 'number'" 
+                                   type="number" 
+                                   v-model.number="getSectionData(currentTab)[item.key]" 
+                                   class="form-input">
+
+                            <input v-else-if="item.type === 'text'" 
+                                   type="text" 
+                                   v-model="getSectionData(currentTab)[item.key]" 
+                                   class="form-input">
+
+                            <label v-else-if="item.type === 'boolean'" class="toggle-switch">
+                                <input type="checkbox" v-model="getSectionData(currentTab)[item.key]">
+                                <span class="slider"></span>
+                            </label>
+
+                            <select v-else-if="item.type === 'select'" 
+                                    v-model="getSectionData(currentTab)[item.key]" 
+                                    class="form-input">
+                                <option v-for="opt in item.options" :key="opt" :value="opt">{{ opt }}</option>
+                            </select>
+
+                            <div v-else-if="item.type === 'color'" class="color-picker-wrapper">
+                                <input type="color" v-model="getSectionData(currentTab)[item.key]">
+                                <span class="color-value">{{ getSectionData(currentTab)[item.key] }}</span>
+                            </div>
+
+                            <div v-else-if="item.type === 'template'" class="template-wrapper">
+                                <input type="text" v-model="getSectionData(currentTab)[item.key]" class="form-input">
+                                <div class="placeholders">
+                                    <span class="placeholder-tag" 
+                                          v-for="(desc, ph) in item.placeholders" 
+                                          :key="ph" 
+                                          @click="insertPlaceholder(currentTab, item.key, ph)" 
+                                          title="点击插入到光标最后">
+                                        {{ ph }} <span class="ph-desc">{{ desc }}</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <input v-else-if="item.type === 'tags'" 
+                                   type="text"
+                                   :value="(getSectionData(currentTab)[item.key] || []).join(', ')"
+                                   @change="e => getSectionData(currentTab)[item.key] = e.target.value.split(',').map(s => s.trim()).filter(s => s)"
+                                   class="form-input" 
+                                   placeholder="输入关键字，用英文逗号分隔">
+
+                            <textarea v-else-if="item.type === 'dict'" 
+                                      class="form-input font-code" 
+                                      rows="5"
+                                      :value="JSON.stringify(getSectionData(currentTab)[item.key] || {}, null, 2)"
+                                      @change="e => { 
+                                          try { 
+                                              getSectionData(currentTab)[item.key] = JSON.parse(e.target.value);
+                                          } catch(err) { 
+                                              alert('格式错误！请确保输入的是合法的 JSON 格式。');
+                                              e.target.value = JSON.stringify(getSectionData(currentTab)[item.key], null, 2);
+                                          } 
+                                      }"
+                                      placeholder="请输入标准的 JSON 格式"></textarea>
+
+                        </div>
+                        <div class="form-description">{{ item.description }}</div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+
+        <footer class="log-panel">
+            <div class="log-header">运行日志</div>
+            <div class="log-content">
+                <div v-for="(log, index) in logs" :key="index" class="log-item">{{ log }}</div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
