@@ -226,6 +226,6 @@ class Api:
 
 if __name__ == '__main__':
     api = Api()
-    window = webview.create_window('批量成绩可视化软件', 'web/index.html', js_api=api, width=1000, height=750)
+    window = webview.create_window('Exam Graph', 'web/index.html', js_api=api, width=1000, height=750)
     api.set_window(window)
     webview.start(debug=True)
