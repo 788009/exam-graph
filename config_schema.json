@@ -1,0 +1,114 @@
+[
+  {
+    "section_key": "data",
+    "section_name": "数据读取设置",
+    "items": [
+      { "key": "class_col", "label": "班级列索引", "type": "number", "default": 1, "description": "约定从 1 开始，内核读取时会自动转换为程序索引。" },
+      { "key": "student_id_col", "label": "座号列索引", "type": "number", "default": 2, "description": "学生座号所在的列索引。" },
+      { "key": "name_col", "label": "姓名列索引", "type": "number", "default": 3, "description": "学生姓名所在的列索引。" },
+      { "key": "first_subject_col", "label": "第一科起始列", "type": "number", "default": 4, "description": "成绩数据开始的第一列索引。" }
+    ]
+  },
+  {
+    "section_key": "parser",
+    "section_name": "列名解析规则",
+    "items": [
+      { 
+        "key": "column_template", 
+        "label": "列名解析模板", 
+        "type": "template", 
+        "default": "{exam}-{subject}", 
+        "description": "用于从表格列名中自动提取考试与科目信息。",
+        "placeholders": {
+          "{exam}": "考试名称",
+          "{subject}": "科目名称"
+        }
+      },
+      { "key": "ignore_keywords", "label": "忽略关键字", "type": "tags", "default": ["名次", "排名", "均分", "赋分"], "description": "如果列名包含这些关键字，将自动忽略，不参与折线图绘制。" }
+    ]
+  },
+  {
+    "section_key": "plot",
+    "section_name": "图表排版与内容",
+    "items": [
+      { 
+        "key": "title_template", 
+        "label": "图表大标题模板", 
+        "type": "template", 
+        "default": "{class_name} - {student_name} (座号: {student_id}) 排名趋势图", 
+        "description": "生成图片顶部的大标题。",
+        "placeholders": {
+          "{class_name}": "班级名",
+          "{student_name}": "姓名",
+          "{student_id}": "座号"
+        }
+      },
+      { "key": "columns", "label": "每行小图数量", "type": "number", "default": 3, "description": "一张大图里面，每一行排布几个科目的折线图。" },
+      { "key": "last_row_align", "label": "末行对齐方式", "type": "select", "options": ["left", "center", "right"], "default": "center", "description": "当最后一行科目数量不满时，图表的对齐方式。" },
+      { "key": "align_x_axis", "label": "统一横轴对齐", "type": "boolean", "default": true, "description": "开启后，取所有科目考试的并集作为横轴，缺失的考试自动留空连线。" },
+      { "key": "show_data_labels", "label": "显示数据标签", "type": "boolean", "default": true, "description": "是否在折线上的数据点旁标注具体的数值。" },
+      { "key": "show_class_average", "label": "显示班级均分线", "type": "boolean", "default": true, "description": "自动计算并绘制所在班级的平均分参考线。" },
+      { "key": "show_grade_average", "label": "显示年级均分线", "type": "boolean", "default": true, "description": "自动计算并绘制全体年级的平均分参考线。" }
+    ]
+  },
+  {
+    "section_key": "plot.styles",
+    "section_name": "视觉样式微调",
+    "items": [
+      { "key": "line_width", "label": "折线粗细", "type": "number", "default": 2.0, "description": "主折线的线条宽度。" },
+      { "key": "marker_size", "label": "数据点大小", "type": "number", "default": 6, "description": "折线上圆点标记的大小。" },
+      { "key": "class_avg_color", "label": "班级均分线颜色", "type": "color", "default": "#808080", "description": "班级平均分参考线的颜色。" },
+      { "key": "grade_avg_color", "label": "年级均分线颜色", "type": "color", "default": "#D3D3D3", "description": "年级平均分参考线的颜色。" },
+      { "key": "class_avg_linestyle", "label": "参考线线型", "type": "select", "options": ["-", "--", "-.", ":"], "default": "--", "description": "参考线的样式，默认为虚线。" }
+    ]
+  },
+  {
+    "section_key": "plot.y_axis",
+    "section_name": "Y轴与刻度组",
+    "items": [
+      { "key": "unified_scale", "label": "同类科目统一刻度", "type": "boolean", "default": true, "description": "开启后，同组科目将使用相同的 Y 轴最小值和最大值。" },
+      { "key": "invert_y_axis", "label": "反转 Y 轴方向", "type": "boolean", "default": true, "description": "如果是排名数据（数字越小排名越高），请开启此项。" },
+      { "key": "groups", "label": "同类科目分组", "type": "dict", "default": {"1000": ["语文", "数学", "英语"], "300": ["物理", "化学", "生物", "历史", "地理", "政治"]}, "description": "键名为满分或参考人数，键值为该组包含的科目列表。" }
+    ]
+  },
+  {
+    "section_key": "output",
+    "section_name": "输出路径设置",
+    "items": [
+      { 
+        "key": "base_dir", 
+        "label": "输出根目录", 
+        "type": "template", 
+        "default": "./output/{filename}-{time}", 
+        "description": "批量生成图片的顶层文件夹。",
+        "placeholders": {
+          "{filename}": "表格文件名",
+          "{time}": "运行时间"
+        }
+      },
+      { 
+        "key": "file_template", 
+        "label": "文件命名模板", 
+        "type": "template", 
+        "default": "{class_name}/{student_id}-{student_name}.png", 
+        "description": "每张图片内部的路径与命名规则。",
+        "placeholders": {
+          "{class_name}": "班级名",
+          "{student_id}": "座号",
+          "{student_name}": "姓名"
+        }
+      }
+    ]
+  },
+  {
+    "section_key": "system",
+    "section_name": "系统与性能",
+    "items": [
+      { "key": "font_regular", "label": "常规字体路径", "type": "text", "default": "./fonts/Noto_Sans_SC/NotoSansSC-Regular.ttf", "description": "项目内置的常规中文字体路径。" },
+      { "key": "font_bold", "label": "粗体字体路径", "type": "text", "default": "./fonts/Noto_Sans_SC/NotoSansSC-Bold.ttf", "description": "项目内置的加粗中文字体路径。" },
+      { "key": "font_archive", "label": "字体压缩包路径", "type": "text", "default": "./fonts/Noto_Sans_SC.7z", "description": "当字体文件丢失时，自动解压的备用压缩包路径。" },
+      { "key": "use_multiprocessing", "label": "启用多进程加速", "type": "boolean", "default": true, "description": "大幅提升批量成图速度（推荐开启）。" },
+      { "key": "max_workers", "label": "最大进程数", "type": "number", "default": 0, "description": "设为 0 时，程序将自动根据电脑 CPU 核心数进行分配。" }
+    ]
+  }
+]
