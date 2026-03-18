@@ -11,9 +11,11 @@ window.addEventListener('pywebviewready', function() {
                 isProcessing: false,  // 是否正在生成图表
                 loading: true,        // 是否正在加载配置
                 logs: ['[系统] 成绩可视化配置台初始化完成...'],
-                isLogVisible: false,
-                taskCompleted: false,
-                currentOutputDir: ''
+                isLogVisible: false,  // 控制日志面板显示状态，默认隐藏
+                taskCompleted: false, // 标记任务是否已完成
+                currentOutputDir: '', // 存储本次生成的专属文件夹路径
+                diagnostics: null,    // 存储数据诊断结果
+                parserRuleClicked: false // 记录是否点击了“前往修改”
             };
         },
         computed: {
@@ -87,8 +89,51 @@ window.addEventListener('pywebviewready', function() {
                 const filepath = await window.pywebview.api.choose_excel_file();
                 if (filepath) {
                     this.selectedFile = filepath;
+                    this.parserRuleClicked = false; // 换新文件时，重置按钮状态
                     this.appendLog(`[就绪] 已选择数据文件: ${filepath}`);
+                    // 选中文件后立刻执行数据诊断
+                    await this.runDiagnostics(filepath);
                 }
+            },
+
+            // ===== 执行数据自检 =====
+            async runDiagnostics(filepath) {
+                try {
+                    const res = await window.pywebview.api.preview_data(filepath);
+                    if (res.status === 'success') {
+                        this.diagnostics = res;
+                    } else {
+                        this.appendLog(`[自检失败] ${res.message}`);
+                        this.diagnostics = null;
+                    }
+                } catch (error) {
+                    console.error("自检请求出错:", error);
+                }
+            },
+
+            // ===== 一键应用预测的列索引 =====
+            async applyPredictions() {
+                if (!this.diagnostics || Object.keys(this.diagnostics.predictions).length === 0) return;
+                
+                const preds = this.diagnostics.predictions;
+                this.config.data.class_col = preds.class_col;
+                this.config.data.student_id_col = preds.student_id_col;
+                this.config.data.name_col = preds.name_col;
+                
+                this.appendLog('[系统] 已自动应用列索引修复。');
+                await this.saveConfig(); // 自动保存
+                await this.runDiagnostics(this.selectedFile); // 重新诊断以刷新 UI
+            },
+
+            // 专门处理点击修改解析规则的逻辑
+            goToParserTab() {
+                this.currentTab = 'parser';
+                this.parserRuleClicked = true; // 触发按钮文字变身
+            },
+
+            // ===== 跳转到指定的配置标签页 =====
+            jumpToTab(tabKey) {
+                this.currentTab = tabKey;
             },
 
             async saveConfig() {
@@ -101,6 +146,11 @@ window.addEventListener('pywebviewready', function() {
                     if (res.status === 'success') {
                         this.appendLog('[成功] 配置已成功保存到 config.toml！');
                         alert('配置保存成功！');
+
+                        // 保存配置后，如果已经选了文件，用最新配置重新自检
+                        if (this.selectedFile) {
+                            await this.runDiagnostics(this.selectedFile);
+                        }
                     } else {
                         this.appendLog(`[错误] 保存失败: ${res.message}`);
                         alert('保存失败，请查看底层日志。');

@@ -75,6 +75,75 @@ class Api:
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
+    def preview_data(self, excel_path):
+        """前端调用：极速读取 Excel 表头并进行模式诊断"""
+        import pandas as pd
+        try:
+            # 仅读取表头，速度极快
+            df = pd.read_excel(excel_path, engine='openpyxl', nrows=0)
+            headers = df.columns.tolist()
+            
+            self._config_manager.load_config()
+            self._config_manager._compile_regex()
+            cfg = self._config_manager.config
+            data_cfg = cfg.get("data", {})
+            
+            c_idx = data_cfg.get("class_col", 1) - 1
+            s_idx = data_cfg.get("student_id_col", 2) - 1
+            n_idx = data_cfg.get("name_col", 3) - 1
+            f_idx = data_cfg.get("first_subject_col", 4) - 1
+            
+            # --- 1. 获取当前配置指向的真实基础列名 ---
+            def get_col_name(idx):
+                return str(headers[idx]) if 0 <= idx < len(headers) else "（索引越界）"
+                
+            current_basics = {
+                "class_col": get_col_name(c_idx),
+                "student_id_col": get_col_name(s_idx),
+                "name_col": get_col_name(n_idx)
+            }
+            
+            # --- 2. 硬编码推测基础列 ---
+            predictions = {}
+            found_class = [i for i, h in enumerate(headers) if "班级" in str(h)]
+            found_id = [i for i, h in enumerate(headers) if "座号" in str(h) or "学号" in str(h)]
+            found_name = [i for i, h in enumerate(headers) if "姓名" in str(h)]
+            
+            # 仅当三者都精准找到 1 个，且互不重叠（一一对应）时，才给出预测
+            if len(found_class) == 1 and len(found_id) == 1 and len(found_name) == 1:
+                if len(set([found_class[0], found_id[0], found_name[0]])) == 3:
+                    # 检查是否与当前配置有差异，有差异才返回需要修正
+                    if found_class[0] != c_idx or found_id[0] != s_idx or found_name[0] != n_idx:
+                        predictions = {
+                            "class_col": found_class[0] + 1,
+                            "student_id_col": found_id[0] + 1,
+                            "name_col": found_name[0] + 1
+                        }
+                    
+            # --- 3. 检查解析模板命中率 ---
+            parsed_subjects = set()
+            sample_headers = []
+            if 0 <= f_idx < len(headers):
+                score_cols = headers[f_idx:]
+                # 提取前 5 个成绩列供前端展示错误提示
+                sample_headers = [str(x) for x in score_cols[:5]]
+                for col in score_cols:
+                    if self._config_manager.is_ignored_column(col):
+                        continue
+                    exam, subj = self._config_manager.parse_column_name(col)
+                    if subj:
+                        parsed_subjects.add(subj)
+            
+            return {
+                "status": "success",
+                "current_basics": current_basics,
+                "predictions": predictions,
+                "parsed_subject_count": len(parsed_subjects),
+                "sample_headers": sample_headers
+            }
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
     def start_task(self, excel_path):
         """前端调用：启动批量生成任务"""
         def _run():

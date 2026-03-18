@@ -25,6 +25,33 @@
             </div>
         </header>
 
+        <header class="top-bar"> ... </header>
+
+        <div class="diagnostic-banner" v-if="diagnostics && (diagnostics.parsed_subject_count === 0 || Object.keys(diagnostics.predictions).length > 0)">
+            
+            <div class="alert-box alert-warning" v-if="Object.keys(diagnostics.predictions).length > 0">
+                <div class="alert-content">
+                    <strong>⚠️ 基础信息列偏移：</strong> 
+                    当前读取到 (班级: {{diagnostics.current_basics.class_col}}, 座号: {{diagnostics.current_basics.student_id_col}}, 姓名: {{diagnostics.current_basics.name_col}})。
+                    已智能检测到正确列位置。
+                </div>
+                <button class="btn-small btn-warning" @click="applyPredictions">一键修复列索引</button>
+            </div>
+
+            <div class="alert-box alert-error" v-if="diagnostics.parsed_subject_count === 0">
+                <div class="alert-content">
+                    <strong>❌ 解析模式错误：</strong> 
+                    当前模板未能从表格中识别出任何科目。您的表格真实列名为：<br>
+                    <code class="real-headers">{{ diagnostics.sample_headers.join(' | ') }} ...</code>
+                </div>
+                
+                <button class="btn-small btn-error" @click="goToParserTab">
+                    {{ parserRuleClicked ? '修改后请手动保存设置' : '前往修改解析规则' }}
+                </button>
+            </div>
+            
+        </div>
+
         <main class="main-layout">
             <aside class="sidebar">
                 <ul>

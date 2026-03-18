@@ -357,3 +357,70 @@ input:checked + .slider:before { transform: translateX(20px); }
     display: flex; justify-content: center; align-items: center;
     height: 100%; color: var(--text-muted); font-size: 1.1rem;
 }
+
+/* ==========================================
+   数据诊断横幅 (Diagnostics Banner)
+========================================== */
+.diagnostic-banner {
+    padding: 0 20px;
+    background-color: var(--bg-color);
+}
+
+.alert-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    margin-top: 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.alert-content { line-height: 1.5; }
+
+.real-headers {
+    display: inline-block;
+    margin-top: 4px;
+    background: rgba(255,255,255,0.6);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #b91c1c;
+    font-family: 'Consolas', monospace;
+    font-size: 0.85rem;
+}
+
+/* 警告配色 (基础列错位) */
+.alert-warning {
+    background-color: #fef3c7;
+    border: 1px solid #fde68a;
+    color: #92400e;
+}
+.btn-warning {
+    background-color: #f59e0b; color: white;
+}
+.btn-warning:hover { background-color: #d97706; }
+
+/* 错误配色 (解析模式错误) */
+.alert-error {
+    background-color: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+.btn-error {
+    background-color: #ef4444; color: white;
+}
+.btn-error:hover { background-color: #dc2626; }
+
+/* 小按钮样式 */
+.btn-small {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+    margin-left: 16px;
+}

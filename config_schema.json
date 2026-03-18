@@ -3,7 +3,7 @@
     "section_key": "data",
     "section_name": "数据读取设置",
     "items": [
-      { "key": "class_col", "label": "班级列索引", "type": "number", "default": 1, "description": "约定从 1 开始，内核读取时会自动转换为程序索引。" },
+      { "key": "class_col", "label": "班级列索引", "type": "number", "default": 1, "description": "学生班级所在的列索引，从 1 开始。" },
       { "key": "student_id_col", "label": "座号列索引", "type": "number", "default": 2, "description": "学生座号所在的列索引。" },
       { "key": "name_col", "label": "姓名列索引", "type": "number", "default": 3, "description": "学生姓名所在的列索引。" },
       { "key": "first_subject_col", "label": "第一科起始列", "type": "number", "default": 4, "description": "成绩数据开始的第一列索引。" }
@@ -24,7 +24,7 @@
           "{subject}": "科目名称"
         }
       },
-      { "key": "ignore_keywords", "label": "忽略关键字", "type": "tags", "default": ["名次", "排名", "均分", "赋分"], "description": "如果列名包含这些关键字，将自动忽略，不参与折线图绘制。" }
+      { "key": "ignore_keywords", "label": "忽略关键字", "type": "tags", "default": ["平均"], "description": "用英文逗号隔开；如果列名包含这些关键字，将自动忽略，不参与折线图绘制。" }
     ]
   },
   {
@@ -68,7 +68,7 @@
     "items": [
       { "key": "unified_scale", "label": "同类科目统一刻度", "type": "boolean", "default": true, "description": "开启后，同组科目将使用相同的 Y 轴最小值和最大值。" },
       { "key": "invert_y_axis", "label": "反转 Y 轴方向", "type": "boolean", "default": true, "description": "如果是排名数据（数字越小排名越高），请开启此项。" },
-      { "key": "groups", "label": "同类科目分组", "type": "dict", "default": {"1000": ["语文", "数学", "英语"], "300": ["物理", "化学", "生物", "历史", "地理", "政治"]}, "description": "键名为满分或参考人数，键值为该组包含的科目列表。" }
+      { "key": "groups", "label": "同类科目分组", "type": "dict", "default": {"1000": ["语文", "数学", "英语"], "300": ["物理", "化学", "生物", "历史", "地理", "政治"]}, "description": "键名为满分或参考人数，键值为该组包含的科目列表；实际仅用于科目分类，具体数值没有影响。" }
     ]
   },
   {
