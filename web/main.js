@@ -86,17 +86,26 @@ window.addEventListener('pywebviewready', function() {
                     }
                     this.config = configRes;
 
-                    // 自动深层补全缺失的默认值
+                    // 自动深层补全缺失的默认值 (已修复嵌套路径解析)
                     this.schema.forEach(section => {
-                        // 确保一级 key 存在
-                        if (!this.config[section.section_key]) {
-                            this.config[section.section_key] = {};
+                        const keys = section.section_key.split('.');
+                        let currentObj = this.config;
+                        
+                        // 逐层深入，确保每一级对象都存在 (类似 mkdir -p)
+                        for (let i = 0; i < keys.length; i++) {
+                            const k = keys[i];
+                            if (currentObj[k] === undefined || currentObj[k] === null) {
+                                currentObj[k] = {};
+                            }
+                            // 指针向下移一层
+                            currentObj = currentObj[k];
                         }
-                        // 遍历该模块下的所有配置项
+                        
+                        // 此时 currentObj 已经正确指向了最深层 (如 config.plot.styles)
                         section.items.forEach(item => {
-                            // 如果 config 中没有这个字段，且 schema 规定了默认值，则自动填入
-                            if (this.config[section.section_key][item.key] === undefined && item.default !== undefined) {
-                                this.config[section.section_key][item.key] = item.default;
+                            // 如果该层级下没有这个字段，且 schema 规定了默认值，则自动填入
+                            if (currentObj[item.key] === undefined && item.default !== undefined) {
+                                currentObj[item.key] = item.default;
                             }
                         });
                     });
