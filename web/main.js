@@ -10,7 +10,8 @@ window.addEventListener('pywebviewready', function() {
                 selectedFile: '',     // 选中的 Excel 文件路径
                 isProcessing: false,  // 是否正在生成图表
                 loading: true,        // 是否正在加载配置
-                logs: ['[系统] 成绩可视化配置台初始化完成...']
+                logs: ['[系统] 成绩可视化配置台初始化完成...'],
+                isLogVisible: false
             };
         },
         computed: {
@@ -116,6 +117,8 @@ window.addEventListener('pywebviewready', function() {
                 }
                 
                 this.isProcessing = true;
+                this.isLogVisible = true;
+                
                 this.appendLog('====================================');
                 this.appendLog(`[任务开始] 正在处理: ${this.selectedFile}`);
                 

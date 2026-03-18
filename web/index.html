@@ -117,8 +117,11 @@
             </section>
         </main>
 
-        <footer class="log-panel">
-            <div class="log-header">运行日志</div>
+        <footer class="log-panel" :class="{ 'is-expanded': isLogVisible }">
+            <div class="log-header" @click="isLogVisible = !isLogVisible" title="点击展开/收起日志">
+                <span>运行日志</span>
+                <span class="toggle-icon">{{ isLogVisible ? '▼ 收起终端' : '▲ 展开终端' }}</span>
+            </div>
             <div class="log-content">
                 <div v-for="(log, index) in logs" :key="index" class="log-item">{{ log }}</div>
             </div>

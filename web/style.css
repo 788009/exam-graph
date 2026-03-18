@@ -283,23 +283,55 @@ input:checked + .slider:before { transform: translateX(20px); }
    底部日志面板 (极客控制台风格)
 ========================================== */
 .log-panel {
-    height: 180px;
     background-color: var(--log-bg);
     color: var(--log-text);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 添加丝滑的折叠动画 */
+    overflow: hidden; /* 防止折叠时内容溢出 */
+}
+
+/* 展开状态 */
+.log-panel.is-expanded {
+    height: 220px;
+}
+
+/* 收起状态 (只留出一个头部的高度) */
+.log-panel:not(.is-expanded) {
+    height: 34px; 
 }
 
 .log-header {
-    padding: 6px 16px;
+    padding: 8px 16px;
     background-color: #020617;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: bold;
     color: #94a3b8;
     border-top: 1px solid #334155;
     border-bottom: 1px solid #1e293b;
     letter-spacing: 1px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none; /* 防止频繁点击时选中文本 */
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.log-header:hover {
+    color: #e2e8f0;
+    background-color: #0f172a;
+}
+
+.toggle-icon {
+    font-weight: normal;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.log-header:hover .toggle-icon {
+    color: #94a3b8;
 }
 
 .log-content {
@@ -317,7 +349,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     padding-bottom: 2px;
     margin-bottom: 2px;
 }
-/* 针对日志颜色的简单区分（可通过JS输出不同格式匹配） */
 .log-item:contains('[错误]'), .log-item:contains('[严重错误]') { color: #ef4444; }
 .log-item:contains('[系统]') { color: #3b82f6; }
 

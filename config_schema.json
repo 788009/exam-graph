@@ -48,7 +48,7 @@
       { "key": "align_x_axis", "label": "统一横轴对齐", "type": "boolean", "default": true, "description": "开启后，取所有科目考试的并集作为横轴，缺失的考试自动留空连线。" },
       { "key": "show_data_labels", "label": "显示数据标签", "type": "boolean", "default": true, "description": "是否在折线上的数据点旁标注具体的数值。" },
       { "key": "show_class_average", "label": "显示班级均分线", "type": "boolean", "default": true, "description": "自动计算并绘制所在班级的平均分参考线。" },
-      { "key": "show_grade_average", "label": "显示年级均分线", "type": "boolean", "default": true, "description": "自动计算并绘制全体年级的平均分参考线。" }
+      { "key": "show_grade_average", "label": "显示年级均分线", "type": "boolean", "default": false, "description": "自动计算并绘制全体年级的平均分参考线。" }
     ]
   },
   {
