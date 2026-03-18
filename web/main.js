@@ -85,6 +85,21 @@ window.addEventListener('pywebviewready', function() {
                         throw new Error(configRes.error);
                     }
                     this.config = configRes;
+
+                    // 自动深层补全缺失的默认值
+                    this.schema.forEach(section => {
+                        // 确保一级 key 存在
+                        if (!this.config[section.section_key]) {
+                            this.config[section.section_key] = {};
+                        }
+                        // 遍历该模块下的所有配置项
+                        section.items.forEach(item => {
+                            // 如果 config 中没有这个字段，且 schema 规定了默认值，则自动填入
+                            if (this.config[section.section_key][item.key] === undefined && item.default !== undefined) {
+                                this.config[section.section_key][item.key] = item.default;
+                            }
+                        });
+                    });
                     
                     // 默认选中第一个 Tab
                     if (this.schema.length > 0) {
@@ -106,6 +121,20 @@ window.addEventListener('pywebviewready', function() {
                     this.appendLog(`[就绪] 已选择数据文件: ${filepath}`);
                     // 选中文件后立刻执行数据诊断
                     await this.runDiagnostics(filepath);
+                }
+            },
+
+            async chooseDirectory(sectionKey, itemKey) {
+                try {
+                    const dirPath = await window.pywebview.api.choose_directory();
+                    if (dirPath) {
+                        const targetObj = this.getSectionData(sectionKey);
+                        if (targetObj) {
+                            targetObj[itemKey] = dirPath; // 直接更新 Vue 响应式数据
+                        }
+                    }
+                } catch (error) {
+                    console.error("选择文件夹失败:", error);
                 }
             },
 
@@ -271,6 +300,25 @@ window.addEventListener('pywebviewready', function() {
                 // 计算百分比，向下取整
                 this.progress.percent = Math.floor((current / total) * 100);
                 this.progress.name = name;
+            },
+
+            // 处理条件渲染逻辑
+            checkCondition(currentTab, showIf) {
+                if (!showIf) return true; // 如果没有条件，默认显示
+                const targetObj = this.getSectionData(currentTab);
+                if (!targetObj) return true;
+                return targetObj[showIf.key] === showIf.value;
+            },
+
+            // 发送中断任务指令
+            async cancelTask() {
+                if (!this.isProcessing) return;
+                this.appendLog('[系统] 正在发送中断请求，等待当前进程安全退出...');
+                try {
+                    await window.pywebview.api.cancel_task();
+                } catch (error) {
+                    this.appendLog(`[错误] 中断失败: ${error}`);
+                }
             },
 
             // 辅助功能：点击占位符标签时，自动将其插入到对应的输入框中，支持嵌套路径的占位符插入

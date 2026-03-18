@@ -13,8 +13,6 @@ from core.config_parser import ConfigManager
 from core.batch_manager import BatchManager
 from core.data_loader import DataLoader
 
-
-
 class Api:
     def __init__(self):
         self._window = None
@@ -24,6 +22,7 @@ class Api:
         # 使用外部路径初始化 ConfigManager，确保可读写
         self.external_config_path = init_external_config()
         self._config_manager = ConfigManager(self.external_config_path)
+        self._current_manager = None
 
     def set_window(self, window):
         self._window = window
@@ -85,6 +84,18 @@ class Api:
             return {"status": "success"}
         except Exception as e:
             return {"status": "error", "message": str(e)}
+
+    def choose_directory(self):
+        """前端调用：唤起操作系统原生文件夹选择器"""
+        try:
+            # webview.FOLDER_DIALOG 指定这是选择文件夹而非文件
+            result = self._window.create_file_dialog(webview.FOLDER_DIALOG)
+            if result and len(result) > 0:
+                # 统一将 Windows 的反斜杠 \ 替换为 /，防止 JSON 转义出错
+                return str(result[0]).replace('\\', '/')
+            return None
+        except Exception as e:
+            return None
 
     def preview_data(self, excel_path):
         """前端调用：极速读取 Excel 表头并进行模式诊断"""
@@ -211,11 +222,17 @@ class Api:
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
+    # 供前端调用的中断接口
+    def cancel_task(self):
+        if self._current_manager:
+            self._current_manager.cancel()
+        return {"status": "success"}
+
     def start_task(self, excel_path):
         """前端调用：启动批量生成任务"""
         def _run():
             try:
-                manager = BatchManager(self.external_config_path)
+                self._current_manager = BatchManager(self.external_config_path)
 
                 last_update_time = 0
                 
@@ -230,13 +247,17 @@ class Api:
                         self._window.evaluate_js(f"window.updateProgress({current}, {total}, '{safe_name}')")
 
                 # 捕获内核返回的实际输出目录
-                actual_output_dir = manager.run(excel_path, progress_callback=progress_cb)
+                actual_output_dir = self._current_manager.run(excel_path, progress_callback=progress_cb)
                 
                 # Windows 路径的斜杠 \ 会破坏 JS 字符串，需替换为 /
                 safe_dir = str(actual_output_dir).replace('\\', '/')
-                
-                # 将路径作为第二个参数传给前端
-                self._window.evaluate_js(f"window.taskFinished('任务执行完毕！', '{safe_dir}')")
+
+                # 判断是正常结束还是被用户中断
+                if self._current_manager.is_cancelled:
+                    self._window.evaluate_js(f"window.taskFinished('任务已被手动中断！', '{safe_dir}')")
+                else:
+                    self._window.evaluate_js(f"window.taskFinished('任务执行完毕！', '{safe_dir}')")
+                    
             except Exception as e:
                 self._window.evaluate_js(f"window.taskError('核心报错: {str(e)}')")
 

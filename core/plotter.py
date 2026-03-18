@@ -48,6 +48,29 @@ class StudentPlotter:
 
     def plot_student(self, student_data, global_context):
         """为单个学生绘制综合成绩趋势大图"""
+        student_name = student_data["name"]
+        student_id = student_data["id"]
+        class_name = student_data["class"]
+
+        # 优先从 global_context 获取解析了 filename 和 time 的 base_dir
+        base_dir = global_context.get("resolved_base_dir", self.config.get("output", {}).get("base_dir", "./output"))
+        template = self.config.get("output", {}).get("file_template", "{class_name}/{student_id}-{student_name}.png")
+        
+        safe_class = str(class_name).replace("/", "_").replace("\\", "_")
+        safe_id = str(student_id).replace("/", "_").replace("\\", "_")
+        safe_name = str(student_name).replace("/", "_").replace("\\", "_")
+        
+        # 兼容了旧的 {class} 和 {name}，同时支持最新的占位符
+        rel_path = template.replace("{class_name}", safe_class).replace("{class}", safe_class)\
+                           .replace("{student_id}", safe_id).replace("{id}", safe_id)\
+                           .replace("{student_name}", safe_name).replace("{name}", safe_name)
+                           
+        save_path = os.path.join(base_dir, rel_path)
+
+        # 断点续传拦截
+        if global_context.get("resume_enabled") and os.path.exists(save_path):
+            return True # 发现文件已存在，直接返回成功，不消耗性能画图
+
         subjects = global_context["subjects"]
         n_subjects = len(subjects)
         if n_subjects == 0:
@@ -103,11 +126,7 @@ class StudentPlotter:
         gs_cols = n_cols * 2
         gs = GridSpec(n_rows, gs_cols, figure=fig)
         gs.update(wspace=0.3, hspace=0.4)
-        
-        student_name = student_data["name"]
-        student_id = student_data["id"]
-        class_name = student_data["class"]
-        
+
         # ===== 1. 标题生成逻辑 =====
         title_template = self.plot_cfg.get("title_template", "{class_name} - {student_name} (座号: {student_id}) 排名趋势图")
         title_text = title_template.replace("{class_name}", str(class_name))\
@@ -141,20 +160,6 @@ class StudentPlotter:
             self._plot_single_subject(ax, subject, student_data, global_context, subj_to_group, group_limits)
 
         # ===== 2. 底部的保存图片逻辑 =====
-        # 优先从 global_context 获取解析了 filename 和 time 的 base_dir
-        base_dir = global_context.get("resolved_base_dir", self.config.get("output", {}).get("base_dir", "./output"))
-        template = self.config.get("output", {}).get("file_template", "{class_name}/{student_id}-{student_name}.png")
-        
-        safe_class = str(class_name).replace("/", "_").replace("\\", "_")
-        safe_id = str(student_id).replace("/", "_").replace("\\", "_")
-        safe_name = str(student_name).replace("/", "_").replace("\\", "_")
-        
-        # 兼容了旧的 {class} 和 {name}，同时支持最新的占位符
-        rel_path = template.replace("{class_name}", safe_class).replace("{class}", safe_class)\
-                           .replace("{student_id}", safe_id).replace("{id}", safe_id)\
-                           .replace("{student_name}", safe_name).replace("{name}", safe_name)
-                           
-        save_path = os.path.join(base_dir, rel_path)
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         
         fig.savefig(save_path, bbox_inches='tight', dpi=120)

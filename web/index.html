@@ -109,7 +109,7 @@
                 <div v-else-if="getSectionData(currentTab)" class="form-container">
                     <h2 class="section-title">{{ currentTabName }}</h2>
                     
-                    <div class="form-group" v-for="item in currentFields" :key="item.key">
+                    <div class="form-group" v-for="item in currentFields" :key="item.key" v-show="checkCondition(currentTab, item.show_if)">
                         <div class="form-label-wrapper">
                             <label class="form-label">{{ item.label }}</label>
                             <span class="form-key-hint">({{ item.key }})</span>
@@ -135,8 +135,22 @@
                             <select v-else-if="item.type === 'select'" 
                                     v-model="getSectionData(currentTab)[item.key]" 
                                     class="form-input">
-                                <option v-for="opt in item.options" :key="opt" :value="opt">{{ opt }}</option>
+                                <option v-for="opt in item.options" 
+                                        :key="opt.value || opt" 
+                                        :value="opt.value !== undefined ? opt.value : opt">
+                                    {{ opt.label || opt }}
+                                </option>
                             </select>
+
+                            <div v-else-if="item.type === 'folder'" style="display: flex; gap: 8px;">
+                                <input type="text" v-model="getSectionData(currentTab)[item.key]" class="form-input">
+                                <button class="btn-secondary btn-small" 
+                                        style="margin: 0; white-space: nowrap;" 
+                                        @click="chooseDirectory(currentTab, item.key)"
+                                        title="点击调用系统资源管理器选择目录">
+                                    浏览...
+                                </button>
+                            </div>
 
                             <div v-else-if="item.type === 'color'" class="color-picker-wrapper">
                                 <input type="color" v-model="getSectionData(currentTab)[item.key]">
@@ -215,7 +229,10 @@
             <div class="progress-container" v-if="isProcessing && progress.total > 0">
                 <div class="progress-info">
                     <span>正在绘制: [{{ progress.current }}/{{ progress.total }}] {{ progress.name }}</span>
-                    <span>{{ progress.percent }}%</span>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <span>{{ progress.percent }}%</span>
+                        <button class="btn-error btn-small" style="margin: 0; padding: 2px 8px; font-size: 0.75rem;" @click="cancelTask">中断</button>
+                    </div>
                 </div>
                 <div class="progress-bar-bg">
                     <div class="progress-bar-fill" :style="{ width: progress.percent + '%' }"></div>

@@ -25,6 +25,10 @@ class BatchManager:
         """初始化全局配置"""
         self.config_manager = ConfigManager(config_path)
         self.config = self.config_manager.config
+        self.is_cancelled = False
+        
+    def cancel(self):
+        self.is_cancelled = True
 
     def run(self, excel_path, progress_callback=None):
         """执行批量生成的总指挥方法"""
@@ -51,8 +55,15 @@ class BatchManager:
         current_time = time.strftime("%Y%m%d-%H%M%S") 
         
         output_cfg = self.config.get("output", {})
-        raw_base_dir = output_cfg.get("base_dir", "./output/{filename}-{time}")
-        resolved_base_dir = raw_base_dir.replace("{filename}", excel_filename).replace("{time}", current_time)
+        dir_mode = output_cfg.get("dir_mode", "dynamic")
+        
+        if dir_mode == "static":
+            resolved_base_dir = output_cfg.get("static_base_dir", "./output/static")
+            resume_enabled = output_cfg.get("resume_enabled", True)
+        else:
+            raw_base_dir = output_cfg.get("base_dir", "./output/{filename}-{time}")
+            resolved_base_dir = raw_base_dir.replace("{filename}", excel_filename).replace("{time}", current_time)
+            resume_enabled = False # 动态目录默认不支持续传
 
         # 提取全局画图上下文 (将解析好的 base_dir 塞进去传给 Plotter)
         global_context = {
@@ -61,7 +72,8 @@ class BatchManager:
             "all_exams": data["all_exams"],
             "grade_averages": data["grade_averages"],
             "class_averages": data["class_averages"],
-            "resolved_base_dir": resolved_base_dir  # 新增这一行
+            "resolved_base_dir": resolved_base_dir,
+            "resume_enabled": resume_enabled
         }
 
         # 2. 准备并发环境
@@ -90,6 +102,12 @@ class BatchManager:
                 
                 # 收集进度
                 for i, future in enumerate(as_completed(futures), 1):
+                    if self.is_cancelled:
+                        # 尝试取消还没开始分配的子任务
+                        for f in futures: f.cancel()
+                        print("\n[中断] 用户终止了批量生成任务。")
+                        break
+
                     success, name, msg = future.result()
                     if success:
                         success_count += 1

@@ -76,15 +76,43 @@
     "section_name": "输出路径设置",
     "items": [
       { 
+        "key": "dir_mode", 
+        "label": "目录生成模式", 
+        "type": "select", 
+        "options": [
+          { "label": "动态按时间生成", "value": "dynamic" },
+          { "label": "固定静态目录", "value": "static" }
+        ], 
+        "default": "dynamic", 
+        "description": "dynamic: 每次按时间生成独立目录 (不支持续传)；static: 输出到固定的静态目录 (支持断点续传)。" 
+      },
+      { 
         "key": "base_dir", 
-        "label": "输出根目录", 
+        "label": "动态输出根目录", 
         "type": "template", 
         "default": "./output/{filename}-{time}", 
-        "description": "批量生成图片的顶层文件夹。",
+        "description": "动态模式下的文件夹命名规则。",
+        "show_if": { "key": "dir_mode", "value": "dynamic" },
         "placeholders": {
           "{filename}": "表格文件名",
           "{time}": "运行时间"
         }
+      },
+      { 
+        "key": "static_base_dir", 
+        "label": "静态输出根目录", 
+        "type": "folder", 
+        "default": "./output/static", 
+        "description": "静态模式下的固定文件夹路径。",
+        "show_if": { "key": "dir_mode", "value": "static" }
+      },
+      { 
+        "key": "resume_enabled", 
+        "label": "启用断点续传", 
+        "type": "boolean", 
+        "default": true, 
+        "description": "在静态模式下，若目标路径下已存在同名图片则直接跳过，大幅节约时间。",
+        "show_if": { "key": "dir_mode", "value": "static" }
       },
       { 
         "key": "file_template", 
