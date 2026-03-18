@@ -200,11 +200,11 @@ class StudentPlotter:
         if cls_avgs:
             self._draw_line(ax, x_indices, cls_avgs, color=self.styles_cfg.get("class_avg_color", "#808080"), linestyle=self.styles_cfg.get("class_avg_linestyle", "--"), label="班级均分")
 
-        valid_stu_points = self._draw_line(ax, x_indices, stu_scores, color="#1f77b4", linestyle="-", marker="o", markersize=marker_size, linewidth=line_width, label="学生成绩")
+        valid_stu_points = self._draw_line(ax, x_indices, stu_scores, color=self.styles_cfg.get("main_line_color", "#2563EB"), linestyle="-", marker="o", markersize=marker_size, linewidth=line_width, label="学生成绩")
 
         if self.plot_cfg.get("show_data_labels", True) and valid_stu_points:
             for vx, vy in valid_stu_points:
-                ax.annotate(f"{vy:g}", xy=(vx, vy), xytext=(0, 7), textcoords="offset points", ha='center', va='bottom', fontsize=10, fontweight='bold', color="#1f77b4")
+                ax.annotate(f"{vy:g}", xy=(vx, vy), xytext=(0, 7), textcoords="offset points", ha='center', va='bottom', fontsize=10, fontweight='bold', color=self.styles_cfg.get("data_label_color", "#1E293B"))
 
         # ==========================================
         # Y轴刻度与反转逻辑 (统一定义与应用)

@@ -56,6 +56,8 @@
     "section_name": "视觉样式微调",
     "items": [
       { "key": "line_width", "label": "折线粗细", "type": "number", "default": 2.0, "description": "主折线的线条宽度。" },
+      { "key": "main_line_color", "label": "主折线颜色", "type": "color", "default": "#2563EB", "description": "图表中主要成绩走势折线的颜色。" },
+      { "key": "data_label_color", "label": "数据标签颜色", "type": "color", "default": "#1E293B", "description": "折线节点上显示的成绩数值的颜色。" },
       { "key": "marker_size", "label": "数据点大小", "type": "number", "default": 6, "description": "折线上圆点标记的大小。" },
       { "key": "class_avg_color", "label": "班级均分线颜色", "type": "color", "default": "#808080", "description": "班级平均分参考线的颜色。" },
       { "key": "grade_avg_color", "label": "年级均分线颜色", "type": "color", "default": "#D3D3D3", "description": "年级平均分参考线的颜色。" },

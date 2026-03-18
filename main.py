@@ -257,7 +257,7 @@ class Api:
                     self._window.evaluate_js(f"window.taskFinished('任务已被手动中断！', '{safe_dir}')")
                 else:
                     self._window.evaluate_js(f"window.taskFinished('任务执行完毕！', '{safe_dir}')")
-                    
+
             except Exception as e:
                 self._window.evaluate_js(f"window.taskError('核心报错: {str(e)}')")
 
@@ -272,4 +272,4 @@ if __name__ == '__main__':
     api = Api()
     window = webview.create_window('Exam Graph', 'web/index.html', js_api=api, width=1000, height=750)
     api.set_window(window)
-    webview.start()
+    webview.start(debug=True)
