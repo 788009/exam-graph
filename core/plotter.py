@@ -1,5 +1,10 @@
 import os
 import math
+
+# 强制 Matplotlib 使用非交互式、线程安全的 Agg 后端
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 from matplotlib.gridspec import GridSpec
