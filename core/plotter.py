@@ -76,7 +76,7 @@ class StudentPlotter:
         if n_subjects == 0:
             return
             
-        # --- 新增：计算分组 Y 轴的最值范围 ---
+        # 计算分组 Y 轴的最值范围
         y_axis_cfg = self.plot_cfg.get("y_axis", {})
         unified_scale = y_axis_cfg.get("unified_scale", True)
         subj_to_group = {}

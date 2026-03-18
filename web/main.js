@@ -204,7 +204,7 @@ window.addEventListener('pywebviewready', function() {
                 }
             },
 
-            // ===== 新增：保存当前模板为备选项 =====
+            // 保存当前模板为备选项
             saveTemplatePreset(sectionKey, itemKey) {
                 const targetObj = this.getSectionData(sectionKey);
                 if (!targetObj) return;
@@ -227,7 +227,7 @@ window.addEventListener('pywebviewready', function() {
                 }
             },
 
-            // ===== 新增：删除指定的备选项 =====
+            // 删除指定的备选项
             deleteTemplatePreset(index) {
                 const targetObj = this.getSectionData('parser');
                 if (targetObj && targetObj.saved_templates) {
