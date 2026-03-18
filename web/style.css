@@ -21,6 +21,21 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    /* 核心逻辑 1：全局放开文本选择权限，方便复制报错和配置 */
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* 核心逻辑 2：精准屏蔽纯交互元素的选中效果，保留清脆的点击手感 */
+button, 
+.sidebar li, 
+.log-header, 
+.toggle-switch, 
+.close-btn, 
+.preset-delete, 
+.placeholder-tag {
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 body {
