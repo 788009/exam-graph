@@ -228,4 +228,4 @@ if __name__ == '__main__':
     api = Api()
     window = webview.create_window('Exam Graph', 'web/index.html', js_api=api, width=1000, height=750)
     api.set_window(window)
-    webview.start(debug=True)
+    webview.start()
