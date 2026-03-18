@@ -1,0 +1,8 @@
+data/*
+fonts/*
+prompts.md
+.env/*
+output/*
+core/__pycache__/*
+test.py
+config.toml

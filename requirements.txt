@@ -1,0 +1,5 @@
+py7zr
+tomli
+pandas
+openpyxl
+seaborn

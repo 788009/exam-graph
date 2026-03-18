@@ -1,0 +1,74 @@
+# ==========================================
+# 批量成绩可视化软件 - 核心配置文件
+# ==========================================
+
+[data]
+# 基础信息列索引（约定从 1 开始，内核读取时会自动减 1 转为 pandas 的 0 索引）
+class_col = 1
+student_id_col = 2
+name_col = 3
+first_subject_col = 4
+
+[parser]
+# 自动解析列名的模板
+# 内核启动时，会将 {exam} 和 {subject} 转换为正则表达式进行匹配
+# 匹配示例: "高三上月考1-语文" -> exam="高三上月考1", subject="语文"
+column_template = "{exam}-{subject}"
+
+# 如果列名包含以下关键字，自动将其标记为 'ignore'（忽略该列，不参与折线图绘制）
+ignore_keywords = ["名次", "排名", "均分", "赋分"]
+
+[plot]
+# 图表大标题模板
+title_template = "{class_name} - {student_name} (座号: {student_id}) 排名趋势图"
+
+# 图像排版
+columns = 3
+last_row_align = "center"  # 最后一行空余时的对齐方式，支持: "left", "center", "right"
+
+# 考试缺失与横轴对齐策略
+# true: 取所有科目中考试次数的并集作为统一横轴，缺失的考试留空但连线
+# false: 各科横轴独立，考了几次就显示几个点
+align_x_axis = true
+
+# 数据标注与参考线
+show_data_labels = true    # 是否在折线上标注具体分数
+show_class_average = true  # 是否自动计算并在图中绘制“班级平均分”折线
+show_grade_average = true  # 是否自动计算并在图中绘制“年级（全表）平均分”折线
+
+[plot.styles]
+# 绘图的视觉微调（供以后扩展用）
+line_width = 2.0
+marker_size = 6
+# 平均分参考线的颜色或样式配置（可选）
+class_avg_color = "#808080" # 灰色
+grade_avg_color = "#D3D3D3" # 浅灰色
+class_avg_linestyle = "--"  # 虚线
+
+[plot.y_axis]
+# 是否开启同类科目统一 Y 轴刻度
+unified_scale = true
+# 是否反转 Y 轴（排名越小越高，适合设为 true）
+invert_y_axis = true
+
+# 分数类型分组（TOML 规范要求键名为字符串）
+[plot.y_axis.groups]
+"1000" = ["语文", "数学", "英语"]
+"300" = ["物理", "化学", "生物", "历史", "地理", "政治"]
+
+[system]
+# 字体管理
+font_regular = "./fonts/Noto_Sans_SC/NotoSansSC-Regular.ttf"
+font_bold = "./fonts/Noto_Sans_SC/NotoSansSC-Bold.ttf"
+font_archive = "./fonts/Noto_Sans_SC.7z"
+
+# 并发与性能
+use_multiprocessing = true
+# 进程池数量，设置为 0 则自动读取操作系统的 os.cpu_count()
+max_workers = 0
+
+[output]
+# 图像输出的根目录，支持 {filename} (去掉后缀的表格文件名) 和 {time} (运行时间)
+base_dir = "./output/{filename}-{time}"
+# 输出路径模板，统一使用更清晰的占位符
+file_template = "{class_name}/{student_id}-{student_name}.png"
