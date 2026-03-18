@@ -4,8 +4,12 @@ import webview
 import threading
 import platform
 import subprocess
+import base64
+import tempfile
+import io
 from core.config_parser import ConfigManager
 from core.batch_manager import BatchManager
+from core.data_loader import DataLoader
 
 class Api:
     def __init__(self):
@@ -141,6 +145,62 @@ class Api:
                 "parsed_subject_count": len(parsed_subjects),
                 "sample_headers": sample_headers
             }
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+        
+    def preview_plot(self, excel_path):
+        """前端调用：生成首位同学的图表并转为 Base64 返回"""
+        try:
+            # 1. 加载数据
+            self._config_manager.load_config()
+            self._config_manager._compile_regex() # 借用你修复的逻辑
+            
+            loader = DataLoader(self._config_manager)
+            data = loader.load(excel_path)
+            
+            students = data.get("students", [])
+            if not students:
+                return {"status": "error", "message": "未在表格中解析到有效学生数据"}
+                
+            first_student = students[0]
+            
+            # 2. 创建临时目录来接收这张图
+            with tempfile.TemporaryDirectory() as temp_dir:
+                global_context = {
+                    "subjects": data["subjects"],
+                    "exam_orders": data["exam_orders"],
+                    "all_exams": data["all_exams"],
+                    "grade_averages": data["grade_averages"],
+                    "class_averages": data["class_averages"],
+                    "resolved_base_dir": temp_dir  # 强制输出到临时目录
+                }
+                
+                from core.plotter import StudentPlotter
+                plotter = StudentPlotter(self._config_manager)
+                plotter.plot_student(first_student, global_context)
+                
+                # 3. 在临时目录中寻找生成的 .png 文件
+                generated_file = None
+                for root, _, files in os.walk(temp_dir):
+                    for file in files:
+                        if file.endswith(".png"):
+                            generated_file = os.path.join(root, file)
+                            break
+                    if generated_file: break
+                    
+                if not generated_file:
+                    return {"status": "error", "message": "图表文件生成失败，未找到输出结果"}
+                    
+                # 4. 转为 Base64 字符串
+                with open(generated_file, "rb") as image_file:
+                    encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                    
+                return {
+                    "status": "success", 
+                    "image_base64": f"data:image/png;base64,{encoded_string}",
+                    "student_name": first_student["name"]
+                }
+                
         except Exception as e:
             return {"status": "error", "message": str(e)}
 

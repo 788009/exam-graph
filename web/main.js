@@ -15,7 +15,12 @@ window.addEventListener('pywebviewready', function() {
                 taskCompleted: false, // 标记任务是否已完成
                 currentOutputDir: '', // 存储本次生成的专属文件夹路径
                 diagnostics: null,    // 存储数据诊断结果
-                parserRuleClicked: false // 记录是否点击了“前往修改”
+                parserRuleClicked: false, // 记录是否点击了“前往修改”
+                // 预览相关状态
+                showPreviewModal: false,
+                previewImageSrc: '',
+                isPreviewing: false,
+                previewStudentName: ''
             };
         },
         computed: {
@@ -159,6 +164,37 @@ window.addEventListener('pywebviewready', function() {
                     this.appendLog(`[异常] 保存出错: ${error}`);
                 } finally {
                     this.isProcessing = false;
+                }
+            },
+
+            // 执行预览生成
+            async previewPlot() {
+                if (!this.selectedFile) return;
+                
+                this.isPreviewing = true;
+                this.appendLog('====================================');
+                this.appendLog('[预览] 正在生成首位同学的图表，请稍候...');
+                
+                try {
+                    // 核心细节：预览前，先静默把前端的最新配置保存进 TOML！
+                    // 否则 Python 读到的还是旧配置，预览就没意义了
+                    await window.pywebview.api.save_config(Vue.toRaw(this.config));
+
+                    const res = await window.pywebview.api.preview_plot(this.selectedFile);
+                    
+                    if (res.status === 'success') {
+                        this.previewImageSrc = res.image_base64;
+                        this.previewStudentName = res.student_name;
+                        this.showPreviewModal = true; // 弹出遮罩层
+                        this.appendLog(`[预览成功] 成功生成学生 [${res.student_name}] 的图表。`);
+                    } else {
+                        this.appendLog(`[预览失败] ${res.message}`);
+                        alert(`预览生成失败:\n${res.message}`);
+                    }
+                } catch (error) {
+                    this.appendLog(`[调用异常] 预览功能出错: ${error}`);
+                } finally {
+                    this.isPreviewing = false;
                 }
             },
 

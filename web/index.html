@@ -18,6 +18,10 @@
             <div class="actions">
                 <button class="btn-secondary" v-if="taskCompleted" @click="openFolder">打开文件夹</button>
                 
+                <button class="btn-secondary" @click="previewPlot" :disabled="!selectedFile || isPreviewing || isProcessing">
+                    {{ isPreviewing ? '生成预览中...' : '预览图表' }}
+                </button>
+                
                 <button class="btn-primary" @click="saveConfig" :disabled="isProcessing">保存配置</button>
                 <button class="btn-success" @click="startTask" :disabled="!selectedFile || isProcessing">
                     {{ isProcessing ? '生成中...' : '开始生成' }}
@@ -155,6 +159,21 @@
                 <div v-for="(log, index) in logs" :key="index" class="log-item">{{ log }}</div>
             </div>
         </footer>
+
+        <div class="modal-overlay" v-if="showPreviewModal" @click.self="showPreviewModal = false">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>图表预览 (当前展示: {{ previewStudentName }})</h3>
+                    <button class="close-btn" @click="showPreviewModal = false" title="关闭弹窗">×</button>
+                </div>
+                <div class="modal-body">
+                    <img :src="previewImageSrc" alt="生成预览图" class="preview-img">
+                </div>
+                <div class="modal-footer">
+                    <span style="color: #6b7280; font-size: 0.85rem;">提示：图片可能较大，您可以通过滚动鼠标查看全貌。若满意，请点击右上角关闭并开始批量生成。</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="main.js"></script>
