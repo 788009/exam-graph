@@ -11,7 +11,9 @@ window.addEventListener('pywebviewready', function() {
                 isProcessing: false,  // 是否正在生成图表
                 loading: true,        // 是否正在加载配置
                 logs: ['[系统] 成绩可视化配置台初始化完成...'],
-                isLogVisible: false
+                isLogVisible: false,
+                taskCompleted: false,
+                currentOutputDir: ''
             };
         },
         computed: {
@@ -118,7 +120,8 @@ window.addEventListener('pywebviewready', function() {
                 
                 this.isProcessing = true;
                 this.isLogVisible = true;
-                
+                this.taskCompleted = false;
+
                 this.appendLog('====================================');
                 this.appendLog(`[任务开始] 正在处理: ${this.selectedFile}`);
                 
@@ -155,17 +158,39 @@ window.addEventListener('pywebviewready', function() {
                 });
             },
 
-            onTaskFinished(msg) {
+            onTaskFinished(msg, outputDir) {
                 this.appendLog(`[完成] ${msg}`);
+                if (outputDir) {
+                    this.appendLog(`[路径] 图表已保存至: ${outputDir}`);
+                    this.currentOutputDir = outputDir; // 保存具体路径
+                }
                 this.isProcessing = false;
-                alert('所有图表生成完毕！请前往 output 目录查看。');
+                this.taskCompleted = true; 
+                
+                // 加个小延时，确保 DOM 状态更新后再弹窗，体验更好
+                setTimeout(() => alert('所有图表生成完毕！请前往 output 目录查看。'), 100);
             },
 
             onTaskError(msg) {
                 this.appendLog(`[严重错误] ${msg}`);
                 this.isProcessing = false;
                 alert('任务执行过程中出错，请查看底层日志。');
-            }
+            },
+
+            async openFolder() {
+                try {
+                    // 将存储的路径传给 Python
+                    const res = await window.pywebview.api.open_folder(this.currentOutputDir);
+                    if (res.status === 'error') {
+                        this.appendLog(`[错误] 无法打开文件夹: ${res.message}`);
+                        alert('打开文件夹失败，请查看底层日志。');
+                    } else {
+                        this.appendLog('[系统] 已唤起系统资源管理器打开专属输出目录。');
+                    }
+                } catch (error) {
+                    this.appendLog(`[调用失败] ${error}`);
+                }
+            },
         }
     });
 

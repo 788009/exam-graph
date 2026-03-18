@@ -16,6 +16,8 @@
                 <span class="file-path" :title="selectedFile">{{ selectedFile || '未选择任何文件' }}</span>
             </div>
             <div class="actions">
+                <button class="btn-secondary" v-if="taskCompleted" @click="openFolder">打开文件夹</button>
+                
                 <button class="btn-primary" @click="saveConfig" :disabled="isProcessing">保存配置</button>
                 <button class="btn-success" @click="startTask" :disabled="!selectedFile || isProcessing">
                     {{ isProcessing ? '生成中...' : '开始生成' }}

@@ -121,3 +121,6 @@ class BatchManager:
         print(f"\n[{time.strftime('%H:%M:%S')}] 批量任务完成！")
         print(f"总计: {len(students)} | 成功: {success_count} | 失败: {fail_count}")
         print(f"总耗时: {cost_time:.2f} 秒 (平均 {cost_time/len(students):.2f} 秒/张)")
+
+        # 返回本次任务的专属输出目录
+        return global_context.get("resolved_base_dir")

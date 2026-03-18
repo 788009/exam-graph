@@ -2,6 +2,8 @@ import os
 import json
 import webview
 import threading
+import platform
+import subprocess
 from core.config_parser import ConfigManager
 from core.batch_manager import BatchManager
 
@@ -50,15 +52,43 @@ class Api:
             return result[0]
         return None
 
+    def open_folder(self, target_dir=None):
+        """前端调用：唤起操作系统自带的文件管理器打开指定目录"""
+        # 如果前端传了具体路径且存在，就打开它；否则打开默认的 ./output
+        if target_dir and os.path.exists(target_dir):
+            output_dir = os.path.abspath(target_dir)
+        else:
+            output_dir = os.path.abspath("./output")
+        
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
+            
+        try:
+            current_os = platform.system()
+            if current_os == 'Windows':
+                os.startfile(output_dir)
+            elif current_os == 'Darwin':  
+                subprocess.call(['open', output_dir])
+            else:  
+                subprocess.call(['xdg-open', output_dir])
+            return {"status": "success"}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
     def start_task(self, excel_path):
         """前端调用：启动批量生成任务"""
         def _run():
             try:
                 manager = BatchManager("./config.toml")
-                manager.run(excel_path)
-                self._window.evaluate_js(f"window.taskFinished('任务执行完毕！')")
+                # 捕获内核返回的实际输出目录
+                actual_output_dir = manager.run(excel_path)
+                
+                # Windows 路径的斜杠 \ 会破坏 JS 字符串，需替换为 /
+                safe_dir = str(actual_output_dir).replace('\\', '/')
+                
+                # 将路径作为第二个参数传给前端
+                self._window.evaluate_js(f"window.taskFinished('任务执行完毕！', '{safe_dir}')")
             except Exception as e:
-                print(os.getcwd())
                 self._window.evaluate_js(f"window.taskError('核心报错: {str(e)}')")
 
         thread = threading.Thread(target=_run)
