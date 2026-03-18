@@ -109,7 +109,18 @@
                             </div>
 
                             <div v-else-if="item.type === 'template'" class="template-wrapper">
-                                <input type="text" v-model="getSectionData(currentTab)[item.key]" class="form-input">
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" v-model="getSectionData(currentTab)[item.key]" class="form-input">
+                                    
+                                    <button v-if="item.key === 'column_template'" 
+                                            class="btn-secondary btn-small" 
+                                            style="margin: 0; white-space: nowrap;"
+                                            @click="saveTemplatePreset(currentTab, item.key)"
+                                            title="将当前输入框的内容保存为常用备选项">
+                                        保存为备选
+                                    </button>
+                                </div>
+                                
                                 <div class="placeholders">
                                     <span class="placeholder-tag" 
                                           v-for="(desc, ph) in item.placeholders" 
@@ -118,6 +129,16 @@
                                           title="点击插入到光标最后">
                                         {{ ph }} <span class="ph-desc">{{ desc }}</span>
                                     </span>
+                                </div>
+
+                                <div class="preset-list" v-if="item.key === 'column_template' && getSectionData('parser')?.saved_templates?.length">
+                                    <div class="preset-label">常用备选：</div>
+                                    <div class="preset-chip" v-for="(preset, idx) in getSectionData('parser').saved_templates" :key="idx">
+                                        <span class="preset-text" @click="getSectionData(currentTab)[item.key] = preset" title="点击应用此模板">
+                                            {{ preset }}
+                                        </span>
+                                        <span class="preset-delete" @click="deleteTemplatePreset(idx)" title="删除此备选">×</span>
+                                    </div>
                                 </div>
                             </div>
 

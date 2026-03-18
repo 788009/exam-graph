@@ -167,6 +167,37 @@ window.addEventListener('pywebviewready', function() {
                 }
             },
 
+            // ===== 新增：保存当前模板为备选项 =====
+            saveTemplatePreset(sectionKey, itemKey) {
+                const targetObj = this.getSectionData(sectionKey);
+                if (!targetObj) return;
+                
+                const currentVal = targetObj[itemKey];
+                if (!currentVal || currentVal.trim() === '') {
+                    alert('模板内容不能为空！');
+                    return;
+                }
+
+                // 如果不存在 saved_templates 数组，则初始化它
+                if (!targetObj.saved_templates) {
+                    targetObj.saved_templates = [];
+                }
+
+                if (!targetObj.saved_templates.includes(currentVal)) {
+                    targetObj.saved_templates.push(currentVal);
+                } else {
+                    alert('该模板已经存在于备选项中。');
+                }
+            },
+
+            // ===== 新增：删除指定的备选项 =====
+            deleteTemplatePreset(index) {
+                const targetObj = this.getSectionData('parser');
+                if (targetObj && targetObj.saved_templates) {
+                    targetObj.saved_templates.splice(index, 1);
+                }
+            },
+
             // 执行预览生成
             async previewPlot() {
                 if (!this.selectedFile) return;
