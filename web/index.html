@@ -29,8 +29,6 @@
             </div>
         </header>
 
-        <header class="top-bar"> ... </header>
-
         <div class="diagnostic-banner" v-if="diagnostics && (diagnostics.parsed_subject_count === 0 || Object.keys(diagnostics.predictions).length > 0 || diagnostics.metadata_mismatch)">
             
             <div class="alert-box alert-warning" v-if="Object.keys(diagnostics.predictions).length > 0">
