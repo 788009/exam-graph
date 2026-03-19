@@ -10,3 +10,6 @@ build
 dist
 main.spec
 release/*
+main.dist
+main.build
+main.exe

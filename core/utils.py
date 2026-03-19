@@ -6,26 +6,45 @@ import os
 # 区分“内部只读资源”和“外部可写目录”
 # ==========================================
 
+import os
+import sys
+
 def get_resource_path(relative_path):
     """
-    获取打包在程序内部的只读资源路径 (如 web/ 目录和 config_schema.json)
-    兼容 PyInstaller 的 _MEIPASS 临时目录和 Nuitka/原生环境
+    获取程序内部资源的路径（兼容 PyInstaller _MEIPASS 和 Nuitka）
+    用于：web/ 目录、config_schema.json 等只读资源
     """
+    # 1. 处理 PyInstaller 的单文件模式 (解压到临时目录)
     if hasattr(sys, '_MEIPASS'):
-        # PyInstaller 单文件模式解压后的临时目录
-        return os.path.join(sys._MEIPASS, relative_path)
-    # Nuitka 独立目录或原生 Python 环境
-    return os.path.join(os.getcwd(), relative_path)
+        base_path = sys._MEIPASS
+    # 2. 处理 Nuitka 或 PyInstaller 的普通模式
+    # 使用 sys.argv[0] 获取程序本体位置，比 getcwd() 更稳定
+    else:
+        # 寻找入口文件所在目录
+        import __main__
+        if hasattr(__main__, "__file__"):
+            base_path = os.path.dirname(os.path.abspath(__main__.__file__))
+        else:
+            base_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+
+    return os.path.normpath(os.path.join(base_path, relative_path))
 
 def get_exe_dir():
     """
-    获取 .exe 所在的外部真实目录 (用于生成 output/ 或读写 config.toml)
+    获取 .exe 所在的外部真实目录
+    用于：读写 config.toml、存放 output/ 日志等用户可见文件
     """
-    if getattr(sys, 'frozen', False):
-        # 打包后的 .exe 所在目录
-        return os.path.dirname(sys.executable)
-    # 原生环境的 main.py 所在目录
-    return os.getcwd()
+    # 如果是打包环境 (Nuitka 或 PyInstaller)
+    if getattr(sys, 'frozen', False) or "__compiled__" in globals():
+        # sys.executable 是生成的 .exe 的绝对路径
+        return os.path.dirname(os.path.abspath(sys.executable))
+    
+    # 如果是开发环境，返回入口脚本 main.py 所在的目录
+    import __main__
+    if hasattr(__main__, "__file__"):
+        return os.path.dirname(os.path.abspath(__main__.__file__))
+    
+    return os.path.dirname(os.path.abspath(sys.argv[0]))
 
 # ==========================================
 # 初始化外部的可写配置文件
