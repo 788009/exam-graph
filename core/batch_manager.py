@@ -7,15 +7,26 @@ from core.config_parser import ConfigManager
 from core.data_loader import DataLoader
 from core.plotter import StudentPlotter
 
-def _worker_task(student_data, global_context, config_manager):
+# 定义子进程的全局变量
+global_plotter = None
+
+def init_worker(config_manager):
     """
-    独立进程的工作函数
-    注意：Matplotlib 在多进程环境下，最好在每个进程内部独立实例化 Plotter，
-    避免跨进程共享 GUI 资源导致死锁或崩溃。
+    子进程初始化函数。
+    由 ProcessPoolExecutor 的 initializer 参数调用。
+    每个子进程在刚诞生时，仅执行一次此函数。
+    在这里实例化 StudentPlotter，后续该子进程的所有任务都复用它。
+    """
+    global global_plotter
+    global_plotter = StudentPlotter(config_manager)
+
+def _worker_task(student_data, global_context):
+    """
+    独立进程的工作函数。
+    直接复用进程启动时创建好的 global_plotter，告别冗余初始化。
     """
     try:
-        plotter = StudentPlotter(config_manager)
-        plotter.plot_student(student_data, global_context)
+        global_plotter.plot_student(student_data, global_context)
         return True, student_data['name'], "成功"
     except Exception as e:
         return False, student_data['name'], str(e)
@@ -90,7 +101,7 @@ class BatchManager:
                 with open(meta_path, "w", encoding="utf-8") as f:
                     json.dump(meta_data, f, ensure_ascii=False, indent=2)
             except Exception as e:
-                print(f"[警告] 元数据 meta.json 写入失败: {e}")
+                print(f"[警告] 元数据 metadata.json 写入失败: {e}")
 
         # 2. 准备并发环境
         system_cfg = self.config.get("system", {})
@@ -108,15 +119,21 @@ class BatchManager:
         # 3. 开始批量绘图
         if use_mp and max_workers > 1:
             print(f"启用多进程加速，分配核心数: {max_workers}")
-            # 使用进程池分配任务
-            with ProcessPoolExecutor(max_workers=max_workers) as executor:
-                # 提交所有学生的画图任务
+            
+            # ===== 修改：使用 initializer 传递子进程初始化逻辑 =====
+            with ProcessPoolExecutor(
+                max_workers=max_workers,
+                initializer=init_worker,
+                initargs=(self.config_manager,)
+            ) as executor:
+                
+                # 提交所有学生的画图任务 (不再传递 config_manager)
                 futures = [
-                    executor.submit(_worker_task, stu, global_context, self.config_manager) 
+                    executor.submit(_worker_task, stu, global_context) 
                     for stu in students
                 ]
                 
-                # 收集进度
+                # 收集进度 (此处 enumerate 从 1 开始，所以直接传 i)
                 for i, future in enumerate(as_completed(futures), 1):
                     if self.is_cancelled:
                         # 尝试取消还没开始分配的子任务
@@ -132,8 +149,8 @@ class BatchManager:
                         print(f"\n[错误] 学生 {name} 图表生成失败: {msg}")
 
                     if progress_callback:
-                        # 传出：当前第几个、总数、当前同学姓名
-                        progress_callback(i + 1, total_students, name)
+                        # 传出：当前第几个、总数、当前同学姓名 (修复了之前的 i+1 溢出逻辑)
+                        progress_callback(i, total_students, name)
                     
                     # 简单的终端进度条打印
                     if i % 10 == 0 or i == len(students):
@@ -151,6 +168,9 @@ class BatchManager:
                     fail_count += 1
                     print(f"\n[错误] 学生 {stu['name']} 图表生成失败: {e}")
                 
+                if progress_callback:
+                    progress_callback(i, total_students, stu['name'])
+                    
                 if i % 10 == 0 or i == len(students):
                     print(f"\r进度: {i}/{len(students)}", end="", flush=True)
             print()
