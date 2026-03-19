@@ -31,7 +31,7 @@
 
         <header class="top-bar"> ... </header>
 
-        <div class="diagnostic-banner" v-if="diagnostics && (diagnostics.parsed_subject_count === 0 || Object.keys(diagnostics.predictions).length > 0)">
+        <div class="diagnostic-banner" v-if="diagnostics && (diagnostics.parsed_subject_count === 0 || Object.keys(diagnostics.predictions).length > 0 || diagnostics.metadata_mismatch)">
             
             <div class="alert-box alert-warning" v-if="Object.keys(diagnostics.predictions).length > 0">
                 <div class="alert-content">
@@ -49,8 +49,19 @@
                     <code class="real-headers">{{ diagnostics.sample_headers.join(' | ') }} ...</code>
                 </div>
                 
-                <button class="btn-small btn-error" @click="goToParserTab">
+                <button class="btn-small btn-error" @click="goToTab('parser', 'parserRuleClicked')">
                     {{ parserRuleClicked ? '修改后请手动保存设置' : '前往修改解析规则' }}
+                </button>
+            </div>
+
+            <div class="alert-box alert-error" v-if="diagnostics.metadata_mismatch">
+                <div class="alert-content">
+                    <strong>🚫 数据污染警告：</strong> 
+                    当前选择的静态目录中已存在其他考试的数据。继续生成将导致新旧图片混杂！<br>
+                    <code class="real-headers">{{ diagnostics.meta_diff_msg }}</code>
+                </div>
+                <button class="btn-small btn-error" @click="goToTab('output', 'metadataClicked')">
+                    {{ metadataClicked ? '修改后请手动保存设置' : '前往修改输出路径' }}
                 </button>
             </div>
             

@@ -146,6 +146,7 @@ class Api:
                     
             # --- 3. 检查解析模板命中率 ---
             parsed_subjects = set()
+            parsed_exams = set() # 同时收集考试名
             sample_headers = []
             if diag_cfg.get("check_parser_template", True):
                 if 0 <= f_idx < len(headers):
@@ -158,16 +159,42 @@ class Api:
                         exam, subj = self._config_manager.parse_column_name(col)
                         if subj:
                             parsed_subjects.add(subj)
+                            if exam:
+                                parsed_exams.add(exam) # 同时收集考试名
             else:
                 # 如果用户关闭了模板校验，则直接塞入一个假数据，使其长度不为 0，从而骗过前端不报错
                 parsed_subjects.add("已跳过校验")
+
+            # --- 4. 静态目录元数据校验 ---
+            metadata_mismatch = False
+            meta_diff_msg = ""
+            output_cfg = cfg.get("output", {})
+            if diag_cfg.get("check_static_metadata", True) and output_cfg.get("dir_mode") == "static":
+                static_dir = output_cfg.get("static_base_dir", "")
+                if static_dir:
+                    meta_path = os.path.join(static_dir, "metadata.json")
+                    if os.path.exists(meta_path):
+                        try:
+                            import json
+                            with open(meta_path, "r", encoding="utf-8") as f:
+                                meta_data = json.load(f)
+                            old_exams = set(meta_data.get("exams", []))
+                            old_subjects = set(meta_data.get("subjects", []))
+                            # 如果集合不完全相等，则触发警报
+                            if old_exams != parsed_exams or old_subjects != parsed_subjects:
+                                metadata_mismatch = True
+                                meta_diff_msg = f"冲突！原目录包含 {len(old_exams)}次考试/{len(old_subjects)}门科目，而当前表格解析出 {len(parsed_exams)}次考试/{len(parsed_subjects)}门科目。"
+                        except Exception:
+                            pass # 忽略读取错误，可能是非标准 JSON 或被占用
             
             return {
                 "status": "success",
                 "current_basics": current_basics,
                 "predictions": predictions,
                 "parsed_subject_count": len(parsed_subjects),
-                "sample_headers": sample_headers
+                "sample_headers": sample_headers,
+                "metadata_mismatch": metadata_mismatch,
+                "meta_diff_msg": meta_diff_msg
             }
         except Exception as e:
             return {"status": "error", "message": str(e)}
@@ -278,4 +305,4 @@ if __name__ == '__main__':
     api = Api()
     window = webview.create_window('Exam Graph', 'web/index.html', js_api=api, width=1000, height=750)
     api.set_window(window)
-    webview.start(debug=False)
+    webview.start(debug=True)

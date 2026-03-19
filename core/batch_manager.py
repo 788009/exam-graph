@@ -1,5 +1,6 @@
 import os
 import time
+import json
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from core.config_parser import ConfigManager
@@ -75,6 +76,21 @@ class BatchManager:
             "resolved_base_dir": resolved_base_dir,
             "resume_enabled": resume_enabled
         }
+
+        # 确保根目录存在，并在静态模式下写入元数据
+        os.makedirs(resolved_base_dir, exist_ok=True)
+        
+        if dir_mode == "static":
+            meta_path = os.path.join(resolved_base_dir, "metadata.json")
+            meta_data = {
+                "exams": data.get("all_exams", []),
+                "subjects": data.get("subjects", [])
+            }
+            try:
+                with open(meta_path, "w", encoding="utf-8") as f:
+                    json.dump(meta_data, f, ensure_ascii=False, indent=2)
+            except Exception as e:
+                print(f"[警告] 元数据 meta.json 写入失败: {e}")
 
         # 2. 准备并发环境
         system_cfg = self.config.get("system", {})

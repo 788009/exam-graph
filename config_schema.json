@@ -147,6 +147,13 @@
         "type": "boolean",
         "default": true,
         "description": "检测当前列名模板是否能从表格中成功提取到至少一个科目。"
+      },
+      {
+        "key": "check_static_metadata",
+        "label": "静态目录元数据校验",
+        "type": "boolean",
+        "default": true,
+        "description": "在静态模式下，严格校验当前表格的考试/科目是否与该目录中已有的元数据完全一致，防止不同考试的图表混淆。"
       }
     ]
   },

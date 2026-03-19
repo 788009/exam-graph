@@ -16,6 +16,7 @@ window.addEventListener('pywebviewready', function() {
                 currentOutputDir: '', // 存储本次生成的专属文件夹路径
                 diagnostics: null,    // 存储数据诊断结果
                 parserRuleClicked: false, // 记录是否点击了“前往修改”
+                metadataClicked: false,   
                 // 预览相关状态
                 showPreviewModal: false,
                 previewImageSrc: '',
@@ -127,6 +128,7 @@ window.addEventListener('pywebviewready', function() {
                 if (filepath) {
                     this.selectedFile = filepath;
                     this.parserRuleClicked = false; // 换新文件时，重置按钮状态
+                    this.metadataClicked = false;
                     this.appendLog(`[就绪] 已选择数据文件: ${filepath}`);
                     // 选中文件后立刻执行数据诊断
                     await this.runDiagnostics(filepath);
@@ -176,10 +178,14 @@ window.addEventListener('pywebviewready', function() {
                 await this.runDiagnostics(this.selectedFile); // 重新诊断以刷新 UI
             },
 
-            // 专门处理点击修改解析规则的逻辑
-            goToParserTab() {
-                this.currentTab = 'parser';
-                this.parserRuleClicked = true; // 触发按钮文字变身
+            // 支持动态更新状态标志的通用跳转方法
+            goToTab(tabKey, stateKey = null) {
+                this.currentTab = tabKey; // 切换左侧菜单
+                
+                // 如果传入了状态变量名，利用动态属性赋值将其设为 true
+                if (stateKey) {
+                    this[stateKey] = true; 
+                }
             },
 
             // ===== 跳转到指定的配置标签页 =====
@@ -196,6 +202,11 @@ window.addEventListener('pywebviewready', function() {
                     const res = await window.pywebview.api.save_config(Vue.toRaw(this.config));
                     if (res.status === 'success') {
                         this.appendLog('[成功] 配置已成功保存到 config.toml！');
+
+                        // 保存成功后，重置所有按钮状态
+                        this.parserRuleClicked = false; 
+                        this.metadataClicked = false;
+                        
                         alert('配置保存成功！');
 
                         // 保存配置后，如果已经选了文件，用最新配置重新自检
