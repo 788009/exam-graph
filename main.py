@@ -109,6 +109,7 @@ class Api:
             self._config_manager._compile_regex()
             cfg = self._config_manager.config
             data_cfg = cfg.get("data", {})
+            diag_cfg = cfg.get("diagnostics", {})
             
             c_idx = data_cfg.get("class_col", 1) - 1
             s_idx = data_cfg.get("student_id_col", 2) - 1
@@ -127,34 +128,39 @@ class Api:
             
             # --- 2. 硬编码推测基础列 ---
             predictions = {}
-            found_class = [i for i, h in enumerate(headers) if "班级" in str(h)]
-            found_id = [i for i, h in enumerate(headers) if "座号" in str(h) or "学号" in str(h)]
-            found_name = [i for i, h in enumerate(headers) if "姓名" in str(h)]
-            
-            # 仅当三者都精准找到 1 个，且互不重叠（一一对应）时，才给出预测
-            if len(found_class) == 1 and len(found_id) == 1 and len(found_name) == 1:
-                if len(set([found_class[0], found_id[0], found_name[0]])) == 3:
-                    # 检查是否与当前配置有差异，有差异才返回需要修正
-                    if found_class[0] != c_idx or found_id[0] != s_idx or found_name[0] != n_idx:
-                        predictions = {
-                            "class_col": found_class[0] + 1,
-                            "student_id_col": found_id[0] + 1,
-                            "name_col": found_name[0] + 1
+            if diag_cfg.get("check_basic_cols", True):
+                found_class = [i for i, h in enumerate(headers) if "班级" in str(h)]
+                found_id = [i for i, h in enumerate(headers) if "座号" in str(h) or "学号" in str(h)]
+                found_name = [i for i, h in enumerate(headers) if "姓名" in str(h)]
+                
+                # 仅当三者都精准找到 1 个，且互不重叠（一一对应）时，才给出预测
+                if len(found_class) == 1 and len(found_id) == 1 and len(found_name) == 1:
+                    if len(set([found_class[0], found_id[0], found_name[0]])) == 3:
+                        # 检查是否与当前配置有差异，有差异才返回需要修正
+                        if found_class[0] != c_idx or found_id[0] != s_idx or found_name[0] != n_idx:
+                            predictions = {
+                                "class_col": found_class[0] + 1,
+                                "student_id_col": found_id[0] + 1,
+                                "name_col": found_name[0] + 1
                         }
                     
             # --- 3. 检查解析模板命中率 ---
             parsed_subjects = set()
             sample_headers = []
-            if 0 <= f_idx < len(headers):
-                score_cols = headers[f_idx:]
-                # 提取前 5 个成绩列供前端展示错误提示
-                sample_headers = [str(x) for x in score_cols[:5]]
-                for col in score_cols:
-                    if self._config_manager.is_ignored_column(col):
-                        continue
-                    exam, subj = self._config_manager.parse_column_name(col)
-                    if subj:
-                        parsed_subjects.add(subj)
+            if diag_cfg.get("check_parser_template", True):
+                if 0 <= f_idx < len(headers):
+                    score_cols = headers[f_idx:]
+                    # 提取前 5 个成绩列供前端展示错误提示
+                    sample_headers = [str(x) for x in score_cols[:5]]
+                    for col in score_cols:
+                        if self._config_manager.is_ignored_column(col):
+                            continue
+                        exam, subj = self._config_manager.parse_column_name(col)
+                        if subj:
+                            parsed_subjects.add(subj)
+            else:
+                # 如果用户关闭了模板校验，则直接塞入一个假数据，使其长度不为 0，从而骗过前端不报错
+                parsed_subjects.add("已跳过校验")
             
             return {
                 "status": "success",

@@ -296,6 +296,35 @@ window.addEventListener('pywebviewready', function() {
                     await window.pywebview.api.save_config(Vue.toRaw(this.config));
                     this.appendLog('[系统] 已自动应用并保存最新配置。');
 
+                    // ===== 强制执行生成前安检 =====
+                    this.appendLog('[系统] 正在进行生成前的数据诊断...');
+                    await this.runDiagnostics(this.selectedFile);
+
+                    // 检查诊断结果是否触发了任何警报
+                    if (this.diagnostics) {
+                        let hasError = false;
+                        let errorMsgs = [];
+                        
+                        // 发现前三列错位
+                        if (Object.keys(this.diagnostics.predictions).length > 0) {
+                            hasError = true;
+                            errorMsgs.push("• 基础信息列错位 (请点击上方黄色横幅一键修复)");
+                        }
+                        // 发现模板解析失败
+                        if (this.diagnostics.parsed_subject_count === 0) {
+                            hasError = true;
+                            errorMsgs.push("• 列名解析模板未能匹配任何科目 (请点击上方红色横幅修改)");
+                        }
+
+                        if (hasError) {
+                            this.appendLog('[阻断] 诊断未通过，生成任务已安全终止。');
+                            alert("发现致命配置错误，生成已中止！\n\n原因：\n" + errorMsgs.join("\n") + "\n\n若您确认表格极其特殊且配置无误，可在左侧「自检与诊断」页面关闭对应的检查项强制生成。");
+                            this.isProcessing = false;
+                            return; // 核心：终止后续运行！
+                        }
+                    }
+                    this.appendLog('[系统] 诊断通过，放行任务。');
+
                     // 调用 Python 启动多进程任务
                     await window.pywebview.api.start_task(this.selectedFile);
                     // 注意：这里不设 isProcessing = false，因为后端是异步的，

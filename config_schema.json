@@ -131,6 +131,26 @@
     ]
   },
   {
+    "section_key": "diagnostics",
+    "section_name": "自检与诊断",
+    "items": [
+      {
+        "key": "check_basic_cols",
+        "label": "前三列偏移检验",
+        "type": "boolean",
+        "default": true,
+        "description": "自动检测并警告班级、座号、姓名列是否错位。"
+      },
+      {
+        "key": "check_parser_template",
+        "label": "列名解析模板检验",
+        "type": "boolean",
+        "default": true,
+        "description": "检测当前列名模板是否能从表格中成功提取到至少一个科目。"
+      }
+    ]
+  },
+  {
     "section_key": "system",
     "section_name": "系统与性能",
     "items": [
