@@ -303,6 +303,6 @@ if __name__ == '__main__':
     # 防止 Windows 下打包后多进程无限弹窗
     multiprocessing.freeze_support()
     api = Api()
-    window = webview.create_window('Exam Graph', 'web/index.html', js_api=api, width=1000, height=750)
+    window = webview.create_window('Exam Graph', get_resource_path('./web/index.html'), js_api=api, width=1000, height=750)
     api.set_window(window)
-    webview.start(debug=True)
+    webview.start(debug=False)
