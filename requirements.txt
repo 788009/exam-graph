@@ -1,5 +1,7 @@
 py7zr
 tomli
+tomli_w
 pandas
 openpyxl
 seaborn
+pywebview

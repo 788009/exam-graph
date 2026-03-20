@@ -13,3 +13,4 @@ release/*
 main.dist
 main.build
 main.exe
+win7/*
